@@ -15,7 +15,7 @@ import Data.Vector
 import GHC.Float
 
 
-displayRender :: (Double -> Double -> Render ()) -> IO ()
+displayRender :: (Float -> Float -> Render ()) -> IO ()
 displayRender f = do
   initGUI
   window <- windowNew

@@ -1,61 +1,48 @@
 module Craftwerk.Core.Style where
 
 import Craftwerk.Core.Color
+import Craftwerk.Core.ColorNames
 
-import Data.List
-
--- This whole modules is a preliminary implementation only the interface itself won't change
-
-type PList = [Property]
-
-data Property = LineWidth Float
-              | LineColor Color
-              | FillColor Color
-              | FillPattern Pattern
-              | Fill Bool
-              | Stroke Bool
-              | ClosePath Bool
-              deriving (Show, Eq)
-                
-data Pattern = Solid deriving (Show, Eq)
+import Data.Maybe
 
 
-mergeProperties :: PList -> PList -> PList
-mergeProperties _ a = a
-
-fill :: PList -> Bool
-fill s = (Fill True) `elem` s
-
-stroke :: PList -> Bool
-stroke s = (Stroke True) `elem` s
-
-closePath :: PList -> Bool
-closePath s = (ClosePath True) `elem` s
-
-lineWidth :: PList -> Float
-lineWidth s = extract $ find isLineWidth s
-  where extract p = case p of 
-          Just (LineWidth c) -> c
-          _ -> 1.0
-        isLineWidth p = case p of
-          LineWidth _ -> True
-          _ -> False
+data StyleProperties = StyleProperties { lineWidth :: Maybe Float
+                                       , lineColor :: Maybe Color
+                                       , fillColor :: Maybe Color
+                                       , fill :: Maybe Bool
+                                       , stroke :: Maybe Bool 
+                                       , closePath :: Maybe Bool
+                                       } deriving (Show, Eq) 
 
 
-lineColor :: PList -> Maybe Color
-lineColor s = extract $ find isLineColor s
-  where extract p = case p of 
-          Just (LineColor c) -> Just c
-          _ -> Nothing
-        isLineColor p = case p of
-          LineColor _ -> True
-          _ -> False
+emptyStyle = StyleProperties Nothing Nothing Nothing Nothing Nothing Nothing
 
-fillColor :: PList -> Maybe Color
-fillColor s = extract $ find isFillColor s
-  where extract p = case p of 
-          Just (FillColor c) -> Just c
-          _ -> Nothing
-        isFillColor p = case p of
-          FillColor _ -> True
-          _ -> False
+defaultStyle = StyleProperties { lineWidth = Just 1.0
+                               , lineColor = Just black
+                               , fillColor = Just white
+                               , stroke = Just True
+                               , fill = Just False
+                               , closePath = Just False 
+                               }               
+               
+yes = Just True
+no = Just False
+
+
+
+getProperty :: StyleProperties -> (StyleProperties -> Maybe a) -> a
+getProperty s f = fromMaybe (fromJust $ f defaultStyle) (f s)
+
+mergeProperty :: StyleProperties -> StyleProperties -> (StyleProperties -> Maybe a) -> Maybe a
+mergeProperty s t f = case (f t) of
+  Nothing -> (f s)
+  x -> x
+
+mergeProperties :: StyleProperties -> StyleProperties -> StyleProperties
+mergeProperties s t = StyleProperties { lineWidth = mergeProperty s t lineWidth
+                                      , lineColor = mergeProperty s t lineColor
+                                      , fillColor = mergeProperty s t fillColor
+                                      , fill = mergeProperty s t fill
+                                      , stroke = mergeProperty s t stroke
+                                      , closePath = mergeProperty s t closePath
+                                      }

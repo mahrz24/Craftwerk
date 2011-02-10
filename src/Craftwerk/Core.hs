@@ -1,6 +1,6 @@
 
 -- |
--- Module      :  Data.IntSet.Translatable
+-- Module      :  Craftwerk.Core
 -- Copyright   :  (c) Malte Harder 2011
 -- License     :  MIT
 -- Maintainer  :  Malte Harder <malte.harder@gmail.com>

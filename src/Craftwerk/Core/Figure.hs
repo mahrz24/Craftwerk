@@ -16,7 +16,7 @@ data Figure = Blank
             | Scale Vector Figure
             | Translate Vector Figure
             | Composition [Figure]
-            | Style PList Figure
+            | Style StyleProperties Figure
             | Line Path
             | Text String
             deriving (Show, Eq)

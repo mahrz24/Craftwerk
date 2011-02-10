@@ -11,9 +11,9 @@ import Data.Maybe
 
 
 figureToGlossPicture :: Figure -> Gloss.Picture
-figureToGlossPicture = figureToGlossPictureWithStyle [Stroke True]
+figureToGlossPicture = figureToGlossPictureWithStyle defaultStyle
 
-figureToGlossPictureWithStyle :: PList -> Figure -> Gloss.Picture 
+figureToGlossPictureWithStyle :: StyleProperties -> Figure -> Gloss.Picture 
 figureToGlossPictureWithStyle _ Blank = Gloss.Blank
 figureToGlossPictureWithStyle s (Style ns a) = (figureToGlossPictureWithStyle (mergeProperties s ns) a)
 figureToGlossPictureWithStyle s (Rotate r a) = Gloss.Rotate r (figureToGlossPictureWithStyle s a)
@@ -23,21 +23,23 @@ figureToGlossPictureWithStyle s (Composition a) = Gloss.Pictures $ map (figureTo
 figureToGlossPictureWithStyle s (Line a) = Gloss.Pictures $ (pathToStyledPolygon s a) ++ (pathToStyledLine s a)  
 figureToGlossPictureWithStyle s (Text a) = Gloss.Text a
 
-pathToStyledLine :: PList -> Path -> [Gloss.Picture]
-pathToStyledLine s p = if stroke s then 
-                         case lineColor s of
-                           Just (RGBA r g b a) -> [Gloss.Color (GlossColor.makeColor r g b a) $ Gloss.Line (styledPath s p)] -- Needs to be changed indirect access
-                           Nothing -> [Gloss.Line (styledPath s p)]
-                       else []
+pathToStyledLine :: StyleProperties -> Path -> [Gloss.Picture]
+pathToStyledLine s p = let sp = getProperty s
+                       in if sp stroke  then 
+                            [Gloss.Color (glossColor (sp lineColor)) $ Gloss.Line (styledPath sp p)] -- Needs to be changed indirect access
+                          else []
                             
-pathToStyledPolygon :: PList -> Path -> [Gloss.Picture]
-pathToStyledPolygon s p = if fill s then 
-                            case fillColor s of
-                              Just (RGBA r g b a) -> [Gloss.Color (GlossColor.makeColor r g b a) $ Gloss.Polygon p]
-                              Nothing -> [Gloss.Polygon p]
-                       else []
+pathToStyledPolygon :: StyleProperties -> Path -> [Gloss.Picture]
+pathToStyledPolygon s p = let sp = getProperty s
+                          in if sp fill then 
+                               [Gloss.Color (glossColor (sp fillColor)) $ Gloss.Polygon p]
+                             else []
                             
-styledPath :: PList -> Path -> Path
-styledPath s p = if closePath s then
+
+styledPath sp p = if sp closePath then
                    p ++ [head p]
                  else p
+
+
+glossColor :: Color -> GlossColor.Color
+glossColor (RGBA r g b a) = GlossColor.makeColor r g b a 
