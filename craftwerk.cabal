@@ -5,20 +5,35 @@ License-file:	     LICENSE
 Author:              Malte Harder <malte.harder@gmail.com>
 Maintainer:          Malte Harder <malte.harder@gmail.com>
 Category:	     Graphics
-Synopsis:	     A high-level and easy to use graphics library with several backends, currently including Cairo(+Gtk UI), Gloss and TikZ.
+Synopsis:	     2D graphics library with TikZ and Cairo output
 Description:         
+                     A high-level and easy to use graphics library with several backends, currently including Cairo(+Gtk UI), Gloss and TikZ.
 		     .
-		     Craftwerk is a high-level 2D vector graphics library. It is focusing on a unified support of several backends (drivers) and offers a simple Gtk based user interface to display and export graphics. Graphics are generated using a simple data type and can then be rendered with one of the available drivers. The different nature of the drivers results in the problem that graphics might look different when rendered. Also sometimes it is required that a graphic for printing using the TikZ driver has different line widths and colors than the same graphic displayed on a monitor. To address this, several functions are available to transform 
+		     Craftwerk is a high-level 2D vector graphics library. It is focusing on a unified support of several backends (drivers) and offers a simple Gtk based user interface to display and export graphics. Graphics are generated using a simple data type and can be rendered with one of the available drivers.
 
 Stability:	     unstable
 Build-Type:          Simple
 Cabal-Version:       >=1.2
 
+Extra-Source-Files:  LICENSE,
+ 		     README,
+		     examples/Example1.hs
 
 Library
-  Build-Depends:     base >= 3 && < 5
-  Exposed-Modules:   Data.Simulation, Data.Simulation.UI, Data.Simulation.Visualisation, Data.Simulation.StateLattice, Data.Simulation.GridWorld, Data.Simulation.Lattice, Data.Simulation.UI.Gtk, Data.Simulation.Visualisation.Figure, Data.Simulation.Visualisation.Color,  Data.Simulation.Visualisation.ColorNames,  Data.Simulation.Visualisation.Style, Data.Simulation.Visualisation.Driver.Cairo, Data.Simulation.Visualisation.Driver.Gloss, Data.Simulation.Util, Data.Simulation.Visualisation.Driver.Tikz
-
-
-
-
+  Hs-Source-Dirs:   src
+  Build-Depends:    base >= 3 && < 5,
+                    vector >= 0.6.0,
+                    array >= 0.3,
+                    cairo >= 0.11,
+                    gloss >= 1.2.0,
+                    gtk >= 0.11
+  Exposed-Modules:  Craftwerk.Core,
+                    Craftwerk.Core.Color,
+                    Craftwerk.Core.ColorNames,
+                    Craftwerk.Core.Style,
+                    Craftwerk.Core.Figure,
+                    Craftwerk.Core.Driver.Cairo,
+                    Craftwerk.Core.Driver.Gloss,
+                    Craftwerk.Core.Driver.Tikz,
+                    Craftwerk.UI,
+                    Craftwerk.UI.Gtk
