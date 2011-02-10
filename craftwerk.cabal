@@ -6,18 +6,22 @@ Author:              Malte Harder <malte.harder@gmail.com>
 Maintainer:          Malte Harder <malte.harder@gmail.com>
 Category:	     Graphics
 Synopsis:	     2D graphics library with TikZ and Cairo output
-Description:         
+Description:
                      A high-level and easy to use graphics library with several backends, currently including Cairo(+Gtk UI), Gloss and TikZ.
 		     .
 		     Craftwerk is a high-level 2D vector graphics library. It is focusing on a unified support of several backends (drivers) and offers a simple Gtk based user interface to display and export graphics. Graphics are generated using a simple data type and can be rendered with one of the available drivers.
 
 Stability:	     unstable
 Build-Type:          Simple
-Cabal-Version:       >=1.2
+Cabal-Version:       >=1.8
 
 Extra-Source-Files:  LICENSE,
  		     README,
 		     examples/Example1.hs
+
+Flag examples
+  Description:      Build the examples
+  Default:          False
 
 Library
   Hs-Source-Dirs:   src
@@ -37,3 +41,11 @@ Library
                     Craftwerk.Core.Driver.Tikz,
                     Craftwerk.UI,
                     Craftwerk.UI.Gtk
+
+Executable example1
+  Hs-Source-Dirs:       examples
+  Build-Depends:        base >= 3 && < 5,
+                        craftwerk
+  Main-Is:              Example1.hs
+  if !flag(examples)
+    Buildable:          False
