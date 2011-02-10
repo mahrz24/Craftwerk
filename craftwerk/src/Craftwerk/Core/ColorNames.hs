@@ -1,4 +1,31 @@
-module Craftwerk.Core.ColorNames where
+-- |
+-- Module      :  Craftwerk.Core.ColorNames
+-- Copyright   :  (c) Malte Harder 2011
+-- License     :  MIT
+-- Maintainer  :  Malte Harder <malte.harder@gmail.com>
+--
+
+module Craftwerk.Core.ColorNames (
+  -- * Named colors
+    white
+  , silver
+  , gray 
+  , black
+  , red
+  , maroon 
+  , yellow 
+  , olive
+  , lime 
+  , green
+  , aqua 
+  , teal 
+  , blue 
+  , navy
+  , fuchsia
+  , purple
+    -- * Color enumeration
+  , integralColor 
+  )  where
        
 import Craftwerk.Core.Color
 
@@ -37,3 +64,4 @@ stdColors = [ white
             , navy
             , fuchsia
             , purple] 
+

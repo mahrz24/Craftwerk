@@ -1,4 +1,21 @@
-module Craftwerk.Core.Figure where
+-- |
+-- Module      :  Craftwerk.Core.Figure
+-- Copyright   :  (c) Malte Harder 2011
+-- License     :  MIT
+-- Maintainer  :  Malte Harder <malte.harder@gmail.com>
+--
+
+module Craftwerk.Core.Figure (
+  -- * Types and data types
+    Point
+  , Vector
+  , Path
+  , Figure (Blank,Rotate,Scale,Translate,Composition,Style,Line,Text) 
+    
+  -- * Path generation  
+  , rectangle
+  , unitRectangle 
+  ) where
 
 import Craftwerk.Core.Style
 import Craftwerk.Core.Color

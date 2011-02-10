@@ -1,11 +1,10 @@
-
 -- |
 -- Module      :  Craftwerk.Core
 -- Copyright   :  (c) Malte Harder 2011
 -- License     :  MIT
 -- Maintainer  :  Malte Harder <malte.harder@gmail.com>
 --
--- A high-level and easy to use graphics library with several backends, 
+-- A high-level and easy to use graphics library with several backends,
 -- currently including TikZ, Cairo (craftwerk-cairo) with Gtk UI (craftwerk-gtk)
 -- and Gloss (craftwerk-gloss).
 -- .
@@ -13,15 +12,15 @@
 -- Thanks to Ben Lippmeier for inspirations from the gloss library.
 --
 
-module Craftwerk.Core 
+module Craftwerk.Core
        (
          module Craftwerk.Core.Color
        , module Craftwerk.Core.ColorNames
        , module Craftwerk.Core.Style
        , module Craftwerk.Core.Figure
 
-       , module Craftwerk.Core.Driver.Tikz 
-       ) where 
+       , module Craftwerk.Core.Driver.Tikz
+       ) where
 
 import Craftwerk.Core.Color
 import Craftwerk.Core.ColorNames
