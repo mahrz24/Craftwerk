@@ -1,0 +1,42 @@
+Name:                craftwerk-gtk
+Version:             0.1
+License:	     MIT
+License-file:	     LICENSE
+Author:              Malte Harder <malte.harder@gmail.com>
+Maintainer:          Malte Harder <malte.harder@gmail.com>
+Category:	     Graphics
+Synopsis:	     Gtk frontend for the 2D graphics library Craftwerk.
+
+Stability:	     unstable
+Build-Type:          Simple
+Cabal-Version:       >=1.8
+
+Extra-Source-Files:  LICENSE,
+		     examples/Example1.hs
+
+Flag examples
+  Description:      Build the examples
+  Default:          False
+
+Library
+  Hs-Source-Dirs:   src
+  Build-Depends:    base >= 3 && < 5,
+                    cairo >= 0.11,
+                    gtk >= 0.11,
+                    vector >= 0.6.0.2,
+                    array >= 0.3.0.1,
+                    craftwerk-cairo,
+                    craftwerk
+  Exposed-Modules:  Craftwerk.UI,
+                    Craftwerk.UI.Gtk
+
+Executable example1
+  Hs-Source-Dirs:       examples
+  Build-Depends:        base >= 3 && < 5,
+                        craftwerk,
+                        craftwerk-cairo,
+                        craftwerk-gtk
+  Main-Is:              Example1.hs
+  if !flag(examples)
+    Buildable:          False
+

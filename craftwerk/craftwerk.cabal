@@ -27,20 +27,13 @@ Library
   Hs-Source-Dirs:   src
   Build-Depends:    base >= 3 && < 5,
                     vector >= 0.6.0,
-                    array >= 0.3,
-                    cairo >= 0.11,
-                    gloss >= 1.2.0,
-                    gtk >= 0.11
+                    array >= 0.3
   Exposed-Modules:  Craftwerk.Core,
                     Craftwerk.Core.Color,
                     Craftwerk.Core.ColorNames,
                     Craftwerk.Core.Style,
                     Craftwerk.Core.Figure,
-                    Craftwerk.Core.Driver.Cairo,
-                    Craftwerk.Core.Driver.Gloss,
-                    Craftwerk.Core.Driver.Tikz,
-                    Craftwerk.UI,
-                    Craftwerk.UI.Gtk
+                    Craftwerk.Core.Driver.Tikz
 
 Executable example1
   Hs-Source-Dirs:       examples
