@@ -39,5 +39,5 @@ conf_doc_build_install craftwerk-gloss
 
 conf_doc_build_install craftwerk-cairo
 
-conf_doc_build_install craftwerk-gtk
+conf_doc_build_install craftwerk-gtk example1
 
