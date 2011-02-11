@@ -10,11 +10,12 @@ module Craftwerk.Core.Figure (
     Point
   , Vector
   , Path
-  , Figure (Blank,Rotate,Scale,Translate,Composition,Style,Line,Text) 
+  , Figure (Blank,Rotate,Scale,Translate,Composition,Style,Line,Text)
+  , Picture (Picture)
     
-  -- * Path generation  
+  -- * Path generation
   , rectangle
-  , unitRectangle 
+  , unitRectangle
   ) where
 
 import Craftwerk.Core.Style
@@ -28,7 +29,7 @@ type Vector = Point
 
 type Path = [Point]
 
-data Figure = Blank 
+data Figure = Blank
             | Rotate Float Figure
             | Scale Vector Figure
             | Translate Vector Figure
@@ -44,8 +45,9 @@ instance Monoid Figure where
   mempty = Blank
   mappend a b = Composition [a, b]
   mconcat = Composition
-  
+
 rectangle :: Point -> Vector -> Path
 rectangle (x,y) (w,h) = [(x,y),(x+w,y),(x+w,y+h),(x,y+h)]
 
 unitRectangle = rectangle (0,0) (1,1)
+
