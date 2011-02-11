@@ -2,16 +2,17 @@
 
 mkdir -p docs
 
+
 function conf_doc_build_install()
 {
-    echo "===[ Build & Install $1 ]==="
 
+    echo -e "\e[0;32m===[ Build & Install $1 ]===\e[0m"
 
-# Cannot do haddock with Buildable: False
-# therefore configure without examples or test flag
     cd $1
     cabal clean
 
+# Cannot do haddock with Buildable: False
+# therefore configure without examples or test flag
     cabal configure
     cabal haddock
 
@@ -20,12 +21,23 @@ function conf_doc_build_install()
     cabal install
     cp -r dist/doc/html/* ../docs/
 
+    if [ "$2" ]
+    then
+	mkdir -p ../bin/$1
+	for prg in "${@}"; do
+	    cp dist/build/${prg}/${prg} ../bin/$1/ &> /dev/null
+	done
+    fi
+
     cd ..
-    echo "===[ Done $1 ]==="
+    echo -e "\e[0;32m===[ Done $1 ]===\e[0m"
 }
 
-conf_doc_build_install craftwerk
+conf_doc_build_install craftwerk example1
+
 conf_doc_build_install craftwerk-gloss
+
 conf_doc_build_install craftwerk-cairo
+
 conf_doc_build_install craftwerk-gtk
 
