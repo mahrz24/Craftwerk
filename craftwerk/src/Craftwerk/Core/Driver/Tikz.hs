@@ -6,10 +6,10 @@
 --
 
 module Craftwerk.Core.Driver.Tikz (
-  -- * Convert a Craftwerk 'Figure' to a TikZ picture environment string
+  -- * TikZ conversion
   figureToTikzPicture
   ) where
-       
+
 import Craftwerk.Core.Figure
 import Craftwerk.Core.Color
 import Craftwerk.Core.Style
@@ -18,6 +18,7 @@ import Data.Maybe
 import Data.List
 import Text.Printf
 
+-- | Convert a Craftwerk 'Figure' to a TikZ picture environment string
 figureToTikzPicture :: Figure -> String
 figureToTikzPicture f = "\\begin{tikzpicture}\n" ++
                         (figureToTikzPictureWithStyle defaultStyle f) ++
@@ -25,17 +26,17 @@ figureToTikzPicture f = "\\begin{tikzpicture}\n" ++
 
 figureToTikzPictureWithStyle :: StyleProperties -> Figure -> String
 figureToTikzPictureWithStyle _ Blank = ""
-figureToTikzPictureWithStyle s (Style ns a) = 
+figureToTikzPictureWithStyle s (Style ns a) =
   (figureToTikzPictureWithStyle (mergeProperties s ns) a)
 
 figureToTikzPictureWithStyle s (Rotate r a) =
   scope ("rotate=" ++ (printNum r))
   (figureToTikzPictureWithStyle s a)
-                                              
+
 figureToTikzPictureWithStyle s (Scale (x,y) a) =
   scope ("xscale=" ++ (printNum x) ++ "cm, yscale=" ++ (printNum y) ++ "cm")
   (figureToTikzPictureWithStyle s a)
-                                                 
+
 figureToTikzPictureWithStyle s (Translate (x,y) a) =
   scope ("xshift=" ++ (printNum x) ++ "cm, yshift=" ++ (printNum y) ++ "cm")
   (figureToTikzPictureWithStyle s a)
@@ -50,13 +51,13 @@ figureToTikzPictureWithStyle s (Line a) =
   in  (xcolor "linec" $ sp lineColor)
       ++ (xcolor "fillc" $ sp fillColor)
       ++ (lineCommand sp)
-      ++ "[" 
-          ++ (lineColorDesc sp) 
-          ++ ",line width=" 
-          ++ (printNum $ sp lineWidth) 
+      ++ "["
+          ++ (lineColorDesc sp)
+          ++ ",line width="
+          ++ (printNum $ sp lineWidth)
           ++ "] "
-      ++ intercalate " -- " 
-          (map (\(x,y) -> "(" ++ (printNum x) ++ "," ++ (printNum y) ++ ")") a) 
+      ++ intercalate " -- "
+          (map (\(x,y) -> "(" ++ (printNum x) ++ "," ++ (printNum y) ++ ")") a)
       ++ (if (sp closePath) then " -- cycle" else "")
       ++ ";\n"
 
@@ -67,7 +68,7 @@ lineColorDesc sp = if (sp fill) && (sp stroke) then
                     "color=fillc"
                     else
                     "color=linec"
-                    
+
 lineCommand sp = if (sp fill) && (sp stroke) then
                   "\\filldraw"
                 else
@@ -75,12 +76,12 @@ lineCommand sp = if (sp fill) && (sp stroke) then
                     "\\fill"
                     else
                     "\\draw"
-                    
-xcolor name (RGBA r g b a) = 
-  "\\definecolor{" 
-  ++ name 
-  ++ "}{rgb}{" 
-  ++ (printf "%.2f,%.2f,%.2f" r g b) 
+
+xcolor name (RGBA r g b a) =
+  "\\definecolor{"
+  ++ name
+  ++ "}{rgb}{"
+  ++ (printf "%.2f,%.2f,%.2f" r g b)
   ++ "}\n"
 
 scope prop body = "\\begin{scope}[" ++ prop ++ "]\n" ++ body ++ "\\end{scope}\n"

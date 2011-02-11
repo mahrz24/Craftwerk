@@ -9,26 +9,28 @@ module Craftwerk.Core.ColorNames (
   -- * Named colors
     white
   , silver
-  , gray 
+  , gray
   , black
   , red
-  , maroon 
-  , yellow 
+  , maroon
+  , yellow
   , olive
-  , lime 
+  , lime
   , green
-  , aqua 
-  , teal 
-  , blue 
+  , aqua
+  , teal
+  , blue
   , navy
   , fuchsia
   , purple
     -- * Color enumeration
-  , integralColor 
+  , integralColor
   )  where
-       
+
 import Craftwerk.Core.Color
 
+-- | Returns the i-th of all 16 available named colours (i % 16 to be precise)
+integralColor :: Integral a => a -> Color
 integralColor i = (concat (repeat stdColors)) !! fromIntegral i
 
 white = makeColorFromIntegral 100 100 100
@@ -50,18 +52,18 @@ purple = makeColorFromIntegral 50 0 50
 
 stdColors = [ white
             , silver
-            , gray 
+            , gray
             , black
             , red
-            , maroon 
-            , yellow 
+            , maroon
+            , yellow
             , olive
-            , lime 
+            , lime
             , green
-            , aqua 
-            , teal 
-            , blue 
+            , aqua
+            , teal
+            , blue
             , navy
             , fuchsia
-            , purple] 
+            , purple]
 

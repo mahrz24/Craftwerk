@@ -4,15 +4,18 @@
 -- License     :  MIT
 -- Maintainer  :  Malte Harder <malte.harder@gmail.com>
 --
-
+-- A 'Figure' is a description of a 2D vector graphic. Affine transformations
+-- and styles apply to all subfigures. When a subfigure of a style node contains
+-- another style node the style properties will be overwritten where the deeper
+-- node specifies it.
+--
 module Craftwerk.Core.Figure (
   -- * Types and data types
     Point
   , Vector
   , Path
   , Figure (Blank,Rotate,Scale,Translate,Composition,Style,Line,Text)
-  , Picture (Picture)
-    
+
   -- * Path generation
   , rectangle
   , unitRectangle
@@ -22,13 +25,11 @@ import Craftwerk.Core.Style
 import Craftwerk.Core.Color
 import Data.Monoid
 
-import qualified Data.Vector as Vec
-
 type Point = (Float, Float)
 type Vector = Point
-
 type Path = [Point]
 
+-- | The main datatype describing an arbitrary figure.
 data Figure = Blank
             | Rotate Float Figure
             | Scale Vector Figure
@@ -39,15 +40,16 @@ data Figure = Blank
             | Text String
             deriving (Show, Eq)
 
-data Picture = Picture Int Int (Vec.Vector Color) deriving (Show, Eq)
-
 instance Monoid Figure where
   mempty = Blank
   mappend a b = Composition [a, b]
   mconcat = Composition
 
+-- | Construct a rectangle path from origin and extent.
 rectangle :: Point -> Vector -> Path
 rectangle (x,y) (w,h) = [(x,y),(x+w,y),(x+w,y+h),(x,y+h)]
 
+-- | Rectangle with origin (0,0) and extent (1,1)
+unitRectangle :: Path
 unitRectangle = rectangle (0,0) (1,1)
 

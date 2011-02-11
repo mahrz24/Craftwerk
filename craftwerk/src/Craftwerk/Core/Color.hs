@@ -8,21 +8,21 @@
 module Craftwerk.Core.Color (
   -- * Data type
     Color(RGBA)
-    
+
   -- * Color construction
   , makeColor
   , makeColorFromIntegral
-    
-  -- * Component access  
+
+  -- * Component access
   , getRGB
   , getRGBA
-    
-  -- * Color blending  
+
+  -- * Color blending
   , (!)
-    
+
   -- * Map
   , cmap
-    
+
   ) where
 
 -- | Color levels are in the range [0 .. 1]
@@ -32,13 +32,13 @@ data Color = RGBA Float Float Float Float deriving (Show, Eq)
 makeColor :: Float -> Float -> Float -> Color
 makeColor r g b = RGBA (cap r) (cap g) (cap b) 1.0
 
--- | Create a color from red, green and blue value in range [0 .. 100]. 
+-- | Create a color from red, green and blue value in range [0 .. 100].
 -- Color values are capped.
 makeColorFromIntegral :: (Integral a) => a -> a -> a -> Color
 makeColorFromIntegral r g b = RGBA (convert r) (convert g) (convert b) 1.0
   where convert k = cap $ (fromIntegral k) / 100.0
 
--- | Create a color from red, green, blue and alpha value. 
+-- | Create a color from red, green, blue and alpha value.
 -- Color values are capped.
 makeColorWithAlpha :: Float -> Float -> Float -> Float -> Color
 makeColorWithAlpha r g b a = RGBA (cap r) (cap g) (cap b) (cap a)
@@ -51,7 +51,7 @@ getRGB (RGBA r g b a) = (r,g,b)
 getRGBA :: Color -> (Float, Float, Float, Float)
 getRGBA (RGBA r g b a) = (r,g,b,a)
 
--- | Blend colors with integer percentage value (TODO: this is not as TikZ 
+-- | Blend colors with integer percentage value (TODO: this is not as TikZ
 -- or xcolor do it!!)
 (!) :: Color -> Int -> Color
 (!) (RGBA r g b a) i = RGBA r g b (a*(fromIntegral i)/100.0)
