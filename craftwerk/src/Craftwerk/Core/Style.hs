@@ -4,19 +4,19 @@
 -- License     :  MIT
 -- Maintainer  :  Malte Harder <malte.harder@gmail.com>
 --
--- 
+--
 
 module Craftwerk.Core.Style (
   -- * Data types
-    StyleProperties(StyleProperties)
-
-  -- * Style properties
-  , lineWidth
-  , lineColor
-  , fillColor
-  , stroke
-  , fill
-  , closePath
+    StyleProperties(
+                     StyleProperties
+                   , lineWidth
+                   , lineColor
+                   , fillColor
+                   , stroke
+                   , fill
+                   , closePath
+                   )
 
   -- * Named styles
   , emptyStyle
@@ -83,7 +83,7 @@ mergeProperty s t f = case (f t) of
   Nothing -> (f s)
   x -> x
 
--- | Merge two property records, where the second argument overwrites fields of 
+-- | Merge two property records, where the second argument overwrites fields of
 -- the first unless a field is 'Nothing'.
 mergeProperties :: StyleProperties ->
                    StyleProperties ->
