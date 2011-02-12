@@ -1,0 +1,39 @@
+Name:                craftwerk-haha
+Version:             0.1
+License:	     MIT
+License-file:	     LICENSE
+Author:              Malte Harder <malte.harder@gmail.com>
+Maintainer:          Malte Harder <malte.harder@gmail.com>
+Category:	     Graphics
+Synopsis:	     Haha backend for the 2D graphics library.
+
+Stability:	     unstable
+Build-Type:          Simple
+Cabal-Version:       >=1.8
+
+Extra-Source-Files:  LICENSE,
+		     examples/Example1.hs
+
+Flag examples
+  Description:      Build the examples
+  Default:          False
+
+
+Library
+  Hs-Source-Dirs:   src
+  Build-Depends:    base >= 3 && < 5,
+                    haha >= 0.3.1,
+                    craftwerk
+  Exposed-Modules:  Craftwerk.Core.Driver.Haha
+
+Executable example1
+  Hs-Source-Dirs:       examples
+  if flag(examples)
+    Build-Depends:        base >= 3 && < 5,
+                          craftwerk,
+                          craftwerk-haha,
+                          haha
+  Main-Is:              Example1.hs
+  if !flag(examples)
+    Buildable:          False
+
