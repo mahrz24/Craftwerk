@@ -14,7 +14,8 @@ module Craftwerk.Core.Figure (
     Point
   , Vector
   , Path
-  , Figure (Blank,Rotate,Scale,Translate,Composition,Style,Line,Text)
+  , Figure(..)
+  , Transform(..)
 
   -- * Path generation
   , rectangle
@@ -31,14 +32,17 @@ type Path = [Point]
 
 -- | The main datatype describing an arbitrary figure.
 data Figure = Blank
-            | Rotate Float Figure
-            | Scale Vector Figure
-            | Translate Vector Figure
+            | Transform Transform Figure
             | Composition [Figure]
             | Style StyleProperties Figure
             | Line Path
             | Text String
             deriving (Show, Eq)
+
+data Transform = Rotate Float
+               | Scale Vector
+               | Translate Vector
+               deriving (Show, Eq)
 
 instance Monoid Figure where
   mempty = Blank
@@ -52,4 +56,3 @@ rectangle (x,y) (w,h) = [(x,y),(x+w,y),(x+w,y+h),(x,y+h)]
 -- | Rectangle with origin (0,0) and extent (1,1)
 unitRectangle :: Path
 unitRectangle = rectangle (0,0) (1,1)
-

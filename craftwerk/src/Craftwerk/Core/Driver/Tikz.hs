@@ -29,15 +29,15 @@ figureToTikzPictureWithStyle _ Blank = ""
 figureToTikzPictureWithStyle s (Style ns a) =
   (figureToTikzPictureWithStyle (mergeProperties s ns) a)
 
-figureToTikzPictureWithStyle s (Rotate r a) =
+figureToTikzPictureWithStyle s (Transform (Rotate r) a) =
   scope ("rotate=" ++ (printNum r))
   (figureToTikzPictureWithStyle s a)
 
-figureToTikzPictureWithStyle s (Scale (x,y) a) =
+figureToTikzPictureWithStyle s (Transform (Scale (x,y)) a) =
   scope ("xscale=" ++ (printNum x) ++ "cm, yscale=" ++ (printNum y) ++ "cm")
   (figureToTikzPictureWithStyle s a)
 
-figureToTikzPictureWithStyle s (Translate (x,y) a) =
+figureToTikzPictureWithStyle s (Transform (Translate (x,y)) a) =
   scope ("xshift=" ++ (printNum x) ++ "cm, yshift=" ++ (printNum y) ++ "cm")
   (figureToTikzPictureWithStyle s a)
 
@@ -87,4 +87,3 @@ xcolor name (RGBA r g b a) =
 scope prop body = "\\begin{scope}[" ++ prop ++ "]\n" ++ body ++ "\\end{scope}\n"
 
 printNum n = printf "%.4f" n
-

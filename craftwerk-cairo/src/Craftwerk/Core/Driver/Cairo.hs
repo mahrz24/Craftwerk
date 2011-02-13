@@ -28,19 +28,19 @@ figureToRenderContextWithStyle _ Blank = return ()
 figureToRenderContextWithStyle s (Style ns a) =
   (figureToRenderContextWithStyle (mergeProperties s ns) a)
 
-figureToRenderContextWithStyle s (Rotate r a) =
+figureToRenderContextWithStyle s (Transform (Rotate r) a) =
   Cairo.save >>
   Cairo.rotate (float2Double r) >>
   figureToRenderContextWithStyle s a >>
   Cairo.restore
 
-figureToRenderContextWithStyle s (Scale p a) =
+figureToRenderContextWithStyle s (Transform (Scale p) a) =
   Cairo.save >>
   (fnC Cairo.scale) p >>
   figureToRenderContextWithStyle s a >>
   Cairo.restore
 
-figureToRenderContextWithStyle s (Translate p a) =
+figureToRenderContextWithStyle s (Transform (Translate p) a) =
   Cairo.save >>
   (fnC Cairo.translate) p  >>
   figureToRenderContextWithStyle s a >>

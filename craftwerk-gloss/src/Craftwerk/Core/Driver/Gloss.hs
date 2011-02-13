@@ -30,13 +30,13 @@ figureToGlossPictureWithStyle _ Blank = Gloss.Blank
 figureToGlossPictureWithStyle s (Style ns a) =
   (figureToGlossPictureWithStyle (mergeProperties s ns) a)
 
-figureToGlossPictureWithStyle s (Rotate r a) =
+figureToGlossPictureWithStyle s (Transform (Rotate r) a) =
   Gloss.Rotate r (figureToGlossPictureWithStyle s a)
 
-figureToGlossPictureWithStyle s (Scale (x,y) a) =
+figureToGlossPictureWithStyle s (Transform (Scale (x,y)) a) =
   Gloss.Scale x y (figureToGlossPictureWithStyle s a)
 
-figureToGlossPictureWithStyle s (Translate (x,y) a) =
+figureToGlossPictureWithStyle s (Transform (Translate (x,y)) a) =
   Gloss.Translate x y (figureToGlossPictureWithStyle s a)
 
 figureToGlossPictureWithStyle s (Composition a) =
@@ -68,4 +68,3 @@ styledPath sp p = if sp closePath then
 
 glossColor :: Color -> GlossColor.Color
 glossColor (RGBA r g b a) = GlossColor.makeColor r g b a
-
