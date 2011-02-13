@@ -23,6 +23,7 @@ import Control.Monad
 import Control.Monad.Reader
 
 data Context = Context { style :: StyleProperties
+                       , strokeMatrix :: Matrix
                        }
 
 type Render a = ReaderT Context Cairo.Render a
@@ -30,8 +31,10 @@ type Render a = ReaderT Context Cairo.Render a
 -- | Render a Craftwerk 'Figure' within a cairo render context
 figureToRenderContext :: Figure -> Cairo.Render ()
 figureToRenderContext f = do
+  strokeMatrix <- Cairo.getMatrix
   runReaderT (figureToRenderContextWithStyle f) $
     Context { style = defaultStyle
+            , strokeMatrix = strokeMatrix
             }
 
 figureToRenderContextWithStyle Blank = return ()
@@ -51,15 +54,18 @@ figureToRenderContextWithStyle (Transform t a) = do
 figureToRenderContextWithStyle (Composition a) =
   mapM_ figureToRenderContextWithStyle a
 
-figureToRenderContextWithStyle (Line a) = asks style >>= \s -> lift $ do
-  let sp = getProperty s
+figureToRenderContextWithStyle (Line a) = ask >>= \c -> lift $ do
+  let sp = getProperty $ style c
   when (sp fill ) (do cairoSetColor (sp fillColor)
                       cairoPath a sp
                       Cairo.fill)
   when (sp stroke) (do cairoSetColor (sp lineColor)
                        cairoPath a sp
                        Cairo.setLineWidth (float2Double $ sp lineWidth)
-                       Cairo.stroke)
+                       Cairo.save
+                       Cairo.setMatrix (strokeMatrix c)
+                       Cairo.stroke
+                       Cairo.restore)
 
 
 figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill
