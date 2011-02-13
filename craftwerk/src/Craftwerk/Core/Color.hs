@@ -22,6 +22,8 @@ module Craftwerk.Core.Color (
 
   -- * Map
   , cmap
+    
+  ,cap
 
   ) where
 
