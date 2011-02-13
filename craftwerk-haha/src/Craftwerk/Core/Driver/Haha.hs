@@ -58,15 +58,15 @@ figureToHahaStringWithStyle _ _ Blank = []
 figureToHahaStringWithStyle s v (Style ns a) =
   (figureToHahaStringWithStyle (mergeProperties s ns) v a)
 
-figureToHahaStringWithStyle s (m,t) (Rotate r a) =
+figureToHahaStringWithStyle s (m,t) (Transform (Rotate r) a) =
   let rm = rot r
   in (figureToHahaStringWithStyle s (mmul rm m, t) a)
 
-figureToHahaStringWithStyle s (m,t) (Scale v a) =
+figureToHahaStringWithStyle s (m,t) (Transform (Scale v) a) =
   let sm = scl v
   in (figureToHahaStringWithStyle s (mmul m sm, t) a)
 
-figureToHahaStringWithStyle s (m,t) (Translate v a) =
+figureToHahaStringWithStyle s (m,t) (Transform (Translate v) a) =
   (figureToHahaStringWithStyle s (m, addv t (vmul m v) ) a)
 
 figureToHahaStringWithStyle s v (Composition a) =
