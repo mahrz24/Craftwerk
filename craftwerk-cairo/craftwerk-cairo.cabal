@@ -16,7 +16,7 @@ Extra-Source-Files:  LICENSE
 Library
   Hs-Source-Dirs:   src
   Build-Depends:    base >= 3 && < 5,
+                    mtl >= 1.1 && < 2.1,
                     cairo >= 0.11,
                     craftwerk
   Exposed-Modules:  Craftwerk.Core.Driver.Cairo
-

@@ -17,41 +17,52 @@ import Craftwerk.Core.Color
 import Craftwerk.Core.Style
 
 import qualified Graphics.Rendering.Cairo as Cairo
+import Graphics.Rendering.Cairo (Matrix)
 
 import Control.Monad
+import Control.Monad.Reader
+
+data Context = Context { style :: StyleProperties
+                       }
+
+type Render a = ReaderT Context Cairo.Render a
 
 -- | Render a Craftwerk 'Figure' within a cairo render context
 figureToRenderContext :: Figure -> Cairo.Render ()
-figureToRenderContext = figureToRenderContextWithStyle defaultStyle
+figureToRenderContext f = do
+  runReaderT (figureToRenderContextWithStyle f) $
+    Context { style = defaultStyle
+            }
 
-figureToRenderContextWithStyle _ Blank = return ()
-figureToRenderContextWithStyle s (Style ns a) =
-  (figureToRenderContextWithStyle (mergeProperties s ns) a)
+figureToRenderContextWithStyle Blank = return ()
+figureToRenderContextWithStyle (Style ns a) =
+  local (\c -> c { style = mergeProperties (style c) ns}) $
+  figureToRenderContextWithStyle a
 
-figureToRenderContextWithStyle s (Transform t a) = do
-  Cairo.save
-  case t of
-    Rotate r    -> Cairo.rotate (float2Double r)
-    Scale p     -> fnC Cairo.scale p
-    Translate p -> fnC Cairo.translate p
-  figureToRenderContextWithStyle s a
-  Cairo.restore
+figureToRenderContextWithStyle (Transform t a) = do
+  lift $ Cairo.save >>
+    case t of
+      Rotate r    -> Cairo.rotate (float2Double r)
+      Scale p     -> fnC Cairo.scale p
+      Translate p -> fnC Cairo.translate p
+  figureToRenderContextWithStyle a
+  lift $ Cairo.restore
 
-figureToRenderContextWithStyle s (Composition a) =
-  sequence_ (map (figureToRenderContextWithStyle s) a)
+figureToRenderContextWithStyle (Composition a) =
+  mapM_ figureToRenderContextWithStyle a
 
-figureToRenderContextWithStyle s (Line a) = do
+figureToRenderContextWithStyle (Line a) = asks style >>= \s -> lift $ do
   let sp = getProperty s
   when (sp fill ) (do cairoSetColor (sp fillColor)
                       cairoPath a sp
                       Cairo.fill)
   when (sp stroke) (do cairoSetColor (sp lineColor)
                        cairoPath a sp
-                       Cairo.setLineWidth (float2Double $ sp lineWidth )
+                       Cairo.setLineWidth (float2Double $ sp lineWidth)
                        Cairo.stroke)
 
 
-figureToRenderContextWithStyle s (Text a) = Cairo.textPath a >> Cairo.fill
+figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill
 
 -- Helper functions
 
