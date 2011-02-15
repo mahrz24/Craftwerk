@@ -16,6 +16,8 @@ module Craftwerk.Core.Style (
                    , stroke
                    , fill
                    , closePath
+                   , dashes
+                   , dashPhase
                    )
 
   -- * Named styles
@@ -45,11 +47,21 @@ data StyleProperties =
                   , fill :: Maybe Bool
                   , stroke :: Maybe Bool
                   , closePath :: Maybe Bool
+                  , dashes :: Maybe [Float]
+                  , dashPhase :: Maybe Float
                   } deriving (Show, Eq)
 
 -- | A style where no property has been set.
 emptyStyle :: StyleProperties
-emptyStyle = StyleProperties Nothing Nothing Nothing Nothing Nothing Nothing
+emptyStyle = StyleProperties 
+             Nothing 
+             Nothing 
+             Nothing 
+             Nothing 
+             Nothing 
+             Nothing
+             Nothing
+             Nothing
 
 -- | The default style used at the root node of any 'Figure'.
 defaultStyle :: StyleProperties
@@ -60,6 +72,8 @@ defaultStyle =
                   , stroke = Just True
                   , fill = Just False
                   , closePath = Just False
+                  , dashes = Just [] :: Maybe [Float]
+                  , dashPhase = Just 0.0
                   }
 
 -- | Alias for 'Just True' to make style specification more convenient.
@@ -94,5 +108,7 @@ mergeProperties s t = StyleProperties { lineWidth = mergeProperty s t lineWidth
                                       , fill = mergeProperty s t fill
                                       , stroke = mergeProperty s t stroke
                                       , closePath = mergeProperty s t closePath
+                                      , dashes = mergeProperty s t dashes
+                                      , dashPhase = mergeProperty s t dashPhase
                                       }
 

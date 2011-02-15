@@ -13,6 +13,7 @@ main = let w = 5
             Line (rectangle (0.1,0.1) (w/2-0.1,h-0.2))
           , Style emptyStyle { fill = yes
                              , fillColor = Just red
+                             , dashes = Just [4.0,2.0,1.0,3.0]
                              }
             $ Line (rectangle (w/2+0.1,0.1) (w/2-0.1,h-0.2))
           ]

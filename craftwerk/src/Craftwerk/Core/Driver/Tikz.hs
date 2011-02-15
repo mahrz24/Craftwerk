@@ -50,7 +50,7 @@ figureToTikzPictureWithStyle s (Line a) =
   let sp = getProperty s
   in  (xcolor "linec" $ sp lineColor)
       ++ (xcolor "fillc" $ sp fillColor)
-      ++ (lineCommand sp)
+      ++ (lineCommand sp (sp dashPhase) (sp dashes))
       ++ "["
           ++ (lineColorDesc sp)
           ++ ",line width="
@@ -69,13 +69,24 @@ lineColorDesc sp = if (sp fill) && (sp stroke) then
                     else
                     "color=linec"
 
-lineCommand sp = if (sp fill) && (sp stroke) then
-                  "\\filldraw"
+lineCommand sp phase pattern = if (sp fill) && (sp stroke) then
+                  "\\filldraw" ++ (dashProperties phase pattern)
                 else
                   if (sp fill) then
                     "\\fill"
                     else
-                    "\\draw"
+                    "\\draw" ++ (dashProperties phase pattern)
+
+dashProperties phase pattern = if (length pattern) > 0 then
+                      "[dash phase=" ++ (printNum phase) ++ 
+                      ",dash pattern=" ++ (dashPattern True pattern)  ++"]"
+                    else
+                      ""
+                      
+dashPattern :: Bool -> [Float] -> String
+dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " " 
+                       ++ dashPattern (not b) xs
+dashPattern _ _ = ""
 
 xcolor name (RGBA r g b a) =
   "\\definecolor{"
