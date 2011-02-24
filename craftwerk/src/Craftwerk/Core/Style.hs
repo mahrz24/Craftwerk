@@ -39,6 +39,9 @@ import Craftwerk.Core.ColorNames
 
 import Data.Maybe
 
+data LineCap = CapRect | CapButt | CapRound deriving (Show,Eq)
+data LineJoin = JoinRound | JoinBevel | JoinMiter deriving (Show,Eq)
+
 -- | A record holding all possible properties.
 data StyleProperties =
   StyleProperties { lineWidth :: Maybe Float
@@ -49,6 +52,9 @@ data StyleProperties =
                   , closePath :: Maybe Bool
                   , dashes :: Maybe [Float]
                   , dashPhase :: Maybe Float
+                  , lineCap :: Maybe LineCap
+                  , lineJoin :: Maybe LineJoin
+                  , miterLimit :: Maybe Float
                   } deriving (Show, Eq)
 
 -- | A style where no property has been set.
@@ -62,6 +68,10 @@ emptyStyle = StyleProperties
              Nothing
              Nothing
              Nothing
+             Nothing
+             Nothing
+             Nothing
+             
 
 -- | The default style used at the root node of any 'Figure'.
 defaultStyle :: StyleProperties
@@ -74,6 +84,9 @@ defaultStyle =
                   , closePath = Just False
                   , dashes = Just [] :: Maybe [Float]
                   , dashPhase = Just 0.0
+                  , lineCap = Just CapButt
+                  , lineJoin = Just JoinMiter
+                  , miterLimit = Just 10.0
                   }
 
 -- | Alias for 'Just True' to make style specification more convenient.
@@ -102,13 +115,17 @@ mergeProperty s t f = case (f t) of
 mergeProperties :: StyleProperties ->
                    StyleProperties ->
                    StyleProperties
-mergeProperties s t = StyleProperties { lineWidth = mergeProperty s t lineWidth
-                                      , lineColor = mergeProperty s t lineColor
-                                      , fillColor = mergeProperty s t fillColor
-                                      , fill = mergeProperty s t fill
-                                      , stroke = mergeProperty s t stroke
-                                      , closePath = mergeProperty s t closePath
-                                      , dashes = mergeProperty s t dashes
-                                      , dashPhase = mergeProperty s t dashPhase
-                                      }
+mergeProperties s t = 
+  StyleProperties { lineWidth = mergeProperty s t lineWidth
+                  , lineColor = mergeProperty s t lineColor
+                  , fillColor = mergeProperty s t fillColor
+                  , fill = mergeProperty s t fill
+                  , stroke = mergeProperty s t stroke
+                  , closePath = mergeProperty s t closePath
+                  , dashes = mergeProperty s t dashes
+                  , dashPhase = mergeProperty s t dashPhase
+                  , lineCap = mergeProperty s t lineCap
+                  , lineJoin = mergeProperty s t lineJoin
+                  , miterLimit = mergeProperty s t miterLimit
+                  }
 
