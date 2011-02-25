@@ -18,7 +18,22 @@ module Craftwerk.Core.Style (
                    , closePath
                    , dashes
                    , dashPhase
+                   , lineCap
+                   , lineJoin 
+                   , miterLimit 
                    )
+    
+    , LineCap(
+               CapRect
+             , CapButt
+             , CapRound
+             )
+    
+    , LineJoin(
+                JoinRound
+              , JoinBevel
+              , JoinMiter
+              )
 
   -- * Named styles
   , emptyStyle

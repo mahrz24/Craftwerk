@@ -50,7 +50,10 @@ figureToTikzPictureWithStyle s (Line a) =
   let sp = getProperty s
   in  (xcolor "linec" $ sp lineColor)
       ++ (xcolor "fillc" $ sp fillColor)
-      ++ (lineCommand sp (sp dashPhase) (sp dashes))
+      ++ (lineCommand sp 
+          (dashProperties (sp dashPhase) (sp dashes))
+          (lineStyle (sp lineCap) (sp lineJoin) (sp miterLimit))
+         )
       ++ "["
           ++ (lineColorDesc sp)
           ++ ",line width="
@@ -68,20 +71,34 @@ lineColorDesc sp = if (sp fill) && (sp stroke) then
                     "color=fillc"
                     else
                     "color=linec"
+                    
 
-lineCommand sp phase pattern = if (sp fill) && (sp stroke) then
-                  "\\filldraw" ++ (dashProperties phase pattern)
+lineCommand sp dp ls  = if (sp fill) && (sp stroke) then
+                  "\\filldraw[" ++ dp ++ "," ++ ls ++ "]"
                 else
                   if (sp fill) then
                     "\\fill"
                     else
-                    "\\draw" ++ (dashProperties phase pattern)
+                    "\\draw[" ++ dp ++ "," ++ ls ++ "]"
+
+lineStyle lc lj ml = 
+  "line cap=" ++ 
+  (case lc of
+    CapRect -> "rect"
+    CapButt -> "butt"
+    CapRound -> "round")
+  ++ ", line join=" ++
+  (case lj of
+    JoinRound -> "round"
+    JoinBevel -> "bevel"
+    JoinMiter -> "miter")
+  ++ ", miter limit=" ++ (printNum ml) 
 
 dashProperties phase pattern = if (length pattern) > 0 then
-                      "[dash phase=" ++ (printNum phase) ++ 
-                      ",dash pattern=" ++ (dashPattern True pattern)  ++"]"
+                      "dash phase=" ++ (printNum phase) ++ 
+                      ",dash pattern=" ++ (dashPattern True pattern)  ++""
                     else
-                      ""
+                      "solid"
                       
 dashPattern :: Bool -> [Float] -> String
 dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " " 
