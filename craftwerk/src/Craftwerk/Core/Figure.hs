@@ -16,8 +16,22 @@ module Craftwerk.Core.Figure (
   , Path
   , Figure(..)
   , Transform(..)
+    
+    -- * Primitive wrappers
+  , blank
+  , rotate
+  , scale
+  , translate
+  , composition
+  , style
+  , line
+  , text
 
-  -- * Path generation
+    -- * Point generation
+  , point
+
+    -- * Path generation
+  , path
   , rectangle
   , unitRectangle
   ) where
@@ -48,6 +62,36 @@ instance Monoid Figure where
   mempty = Blank
   mappend a b = Composition [a, b]
   mconcat = Composition
+  
+blank :: Figure
+blank = Blank
+
+rotate :: Float -> Figure -> Figure
+rotate r = Transform (Rotate r)
+  
+scale :: Vector -> Figure -> Figure
+scale v = Transform (Scale v)
+
+translate :: Vector -> Figure -> Figure
+translate v = Transform (Translate v)
+
+composition :: [Figure] -> Figure
+composition = Composition
+
+style :: StyleProperties -> Figure -> Figure
+style = Style
+
+line :: Path -> Figure
+line = Line
+
+text :: String -> Figure
+text = Text
+
+point :: Float -> Float -> Point
+point x y = (x,y)
+
+path :: [Point] -> Path
+path = id
 
 -- | Construct a rectangle path from origin and extent.
 rectangle :: Point -> Vector -> Path
