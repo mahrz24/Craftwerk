@@ -39,6 +39,7 @@ figureToTikzPicture f =
 
 figureToTikzPictureWithStyle :: Figure -> Reader Context String
 figureToTikzPictureWithStyle Blank = return ""
+
 figureToTikzPictureWithStyle (Style ns a) = 
   local (\c -> c { styleP = mergeProperties (styleP c) ns
                  , fillDepth = (fillDepth c) + (maybeToInt $ fillColor ns)
@@ -49,7 +50,6 @@ figureToTikzPictureWithStyle (Style ns a) =
       $ prependColor (scopePrefix (fillDepth c) ++ "fillc") ns fillColor
       $ liftM (scope $ styleArguments ns)
       (figureToTikzPictureWithStyle a))
-
 
 figureToTikzPictureWithStyle (Transform (Rotate r) a) =
   liftM (scope (numArgumentList [("rotate",r,"")]))
@@ -119,6 +119,10 @@ dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " "
 dashPattern _ _ = ""
 
 
+-- * Style related commands
+
+styleArguments :: StyleProperties -> [Strings]
+styleArguments = [""]
 
 -- * TikZ/PGF & xcolor Commands
 
