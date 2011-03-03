@@ -35,18 +35,17 @@ figureToTikzPictureWithStyle (Style ns a) =
   local (\c -> c { styleP = mergeProperties (styleP c) ns}) $
   (figureToTikzPictureWithStyle a)
 
-figureToTikzPictureWithStyle (Transform (Rotate r) a) = do
-  figure <- (figureToTikzPictureWithStyle a)
-  return $ scope (numArgumentList [("rotate",r,"")]) figure
+figureToTikzPictureWithStyle (Transform (Rotate r) a) =
+  liftM (scope (numArgumentList [("rotate",r,"")]))
+  (figureToTikzPictureWithStyle a)
   
+figureToTikzPictureWithStyle (Transform (Scale (x,y)) a) =  
+  liftM (scope (numArgumentList [("xscale",x,"cm"),("yscale",y,"cm")])) 
+  (figureToTikzPictureWithStyle a)
 
-figureToTikzPictureWithStyle (Transform (Scale (x,y)) a) = do
-  figure <- (figureToTikzPictureWithStyle a)
-  return $ scope (numArgumentList [("xscale",x,"cm"),("yscale",y,"cm")]) figure
-
-figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) = do
-  figure <- (figureToTikzPictureWithStyle a)
-  return $ scope (numArgumentList [("xshift",x,"cm"),("yshift",y,"cm")]) figure
+figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) =  
+  liftM (scope (numArgumentList [("xshift",x,"cm"),("yshift",y,"cm")]))
+  (figureToTikzPictureWithStyle a)
 
 figureToTikzPictureWithStyle (Composition a) =
    concat `liftM` mapM figureToTikzPictureWithStyle a
