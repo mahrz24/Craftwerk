@@ -33,13 +33,13 @@ figureToRenderContext :: Figure -> Cairo.Render ()
 figureToRenderContext f = do
   strokeMatrix <- Cairo.getMatrix
   runReaderT (figureToRenderContextWithStyle f) $
-    Context { style = defaultStyle
+    Context { styleP = defaultStyle
             , strokeMatrix = strokeMatrix
             }
 
 figureToRenderContextWithStyle Blank = return ()
 figureToRenderContextWithStyle (Style ns a) =
-  local (\c -> c { style = mergeProperties (style c) ns}) $
+  local (\c -> c { styleP = mergeProperties (styleP c) ns}) $
   figureToRenderContextWithStyle a
 
 figureToRenderContextWithStyle (Transform t a) = do
@@ -48,14 +48,14 @@ figureToRenderContextWithStyle (Transform t a) = do
       Rotate r    -> Cairo.rotate (float2Double r)
       Scale p     -> fnC Cairo.scale p
       Translate p -> fnC Cairo.translate p
-  figureToRenderContextWithStyle a
+  figureToRenderContextWithStyle a 
   lift $ Cairo.restore
 
 figureToRenderContextWithStyle (Composition a) =
   mapM_ figureToRenderContextWithStyle a
 
 figureToRenderContextWithStyle (Line a) = ask >>= \c -> lift $ do
-  let sp = getProperty $ style c
+  let sp = getProperty $ styleP c
   when (sp fill ) (do cairoSetColor (sp fillColor)
                       cairoPath a sp
                       Cairo.fill)

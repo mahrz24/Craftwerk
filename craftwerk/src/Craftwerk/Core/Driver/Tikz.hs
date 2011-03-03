@@ -18,36 +18,44 @@ import Data.Maybe
 import Data.List
 import Text.Printf
 
+import Control.Monad
+import Control.Monad.Reader
+
+data Context = Context { styleP :: StyleProperties }
+
 -- | Convert a Craftwerk 'Figure' to a TikZ picture environment string
 figureToTikzPicture :: Figure -> String
 figureToTikzPicture f = 
-  environment "tikzpicture" [] (figureToTikzPictureWithStyle defaultStyle f) 
+  environment "tikzpicture" [] (runReader (figureToTikzPictureWithStyle f) $
+  Context { styleP = defaultStyle })
+  
+figureToTikzPictureWithStyle :: Figure -> Reader Context String
+figureToTikzPictureWithStyle Blank = return ""
+figureToTikzPictureWithStyle (Style ns a) =
+  local (\c -> c { styleP = mergeProperties (styleP c) ns}) $
+  (figureToTikzPictureWithStyle a)
 
-figureToTikzPictureWithStyle :: StyleProperties -> Figure -> String
-figureToTikzPictureWithStyle _ Blank = ""
-figureToTikzPictureWithStyle s (Style ns a) =
-  (figureToTikzPictureWithStyle (mergeProperties s ns) a)
+figureToTikzPictureWithStyle (Transform (Rotate r) a) = do
+  figure <- (figureToTikzPictureWithStyle a)
+  return $ scope (numArgumentList [("rotate",r,"")]) figure
+  
 
-figureToTikzPictureWithStyle s (Transform (Rotate r) a) =
-  scope ["rotate=" ++ (printNum r)]
-  (figureToTikzPictureWithStyle s a)
+figureToTikzPictureWithStyle (Transform (Scale (x,y)) a) = do
+  figure <- (figureToTikzPictureWithStyle a)
+  return $ scope (numArgumentList [("xscale",x,"cm"),("yscale",y,"cm")]) figure
 
-figureToTikzPictureWithStyle s (Transform (Scale (x,y)) a) =
-  scope ["xscale=" ++ (printNum x) ++ "cm", " yscale=" ++ (printNum y) ++ "cm"]
-  (figureToTikzPictureWithStyle s a)
+figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) = do
+  figure <- (figureToTikzPictureWithStyle a)
+  return $ scope (numArgumentList [("xshift",x,"cm"),("yshift",y,"cm")]) figure
 
-figureToTikzPictureWithStyle s (Transform (Translate (x,y)) a) =
-  scope ["xshift=" ++ (printNum x) ++ "cm", " yshift=" ++ (printNum y) ++ "cm"]
-  (figureToTikzPictureWithStyle s a)
+figureToTikzPictureWithStyle (Composition a) =
+   concat `liftM` mapM figureToTikzPictureWithStyle a
 
-figureToTikzPictureWithStyle s (Composition a) =
-  concatMap (figureToTikzPictureWithStyle s) a
+figureToTikzPictureWithStyle (Text a) = return $ node a
 
-figureToTikzPictureWithStyle s (Text a) = node a
-
-figureToTikzPictureWithStyle s (Line a) =
-  let sp = getProperty s
-  in  (xcolor "linec" $ sp lineColor)
+figureToTikzPictureWithStyle (Line a) =  ask >>= \c ->
+  let sp = getProperty (styleP c)
+  in return $ (xcolor "linec" $ sp lineColor)
       ++ (xcolor "fillc" $ sp fillColor)
       ++ (lineCommand sp 
           (dashProperties (sp dashPhase) (sp dashes))
