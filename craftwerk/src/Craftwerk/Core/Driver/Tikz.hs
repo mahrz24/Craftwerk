@@ -33,7 +33,8 @@ figureToTikzPictureWithStyle :: Figure -> Reader Context String
 figureToTikzPictureWithStyle Blank = return ""
 figureToTikzPictureWithStyle (Style ns a) =
   local (\c -> c { styleP = mergeProperties (styleP c) ns}) $
-  (figureToTikzPictureWithStyle a)
+  ask >>= (\c -> liftM (scope $ styleArguments (styleP c))
+                 (figureToTikzPictureWithStyle a))
 
 figureToTikzPictureWithStyle (Transform (Rotate r) a) =
   liftM (scope (numArgumentList [("rotate",r,"")]))
@@ -52,20 +53,22 @@ figureToTikzPictureWithStyle (Composition a) =
 
 figureToTikzPictureWithStyle (Text a) = return $ node a
 
-figureToTikzPictureWithStyle (Line a) =  ask >>= \c ->
+figureToTikzPictureWithStyle (Line a) = ask >>= \c ->
   let sp = getProperty (styleP c)
-  in return $ (xcolor "linec" $ sp lineColor)
-      ++ (xcolor "fillc" $ sp fillColor)
-      ++ (lineCommand sp 
-          (dashProperties (sp dashPhase) (sp dashes))
-          (lineStyle (sp lineCap) (sp lineJoin) (sp miterLimit))
-         )
-      ++ "["
-          ++ (lineColorDesc sp)
-          ++ ",line width="
-          ++ (printNum $ sp lineWidth)
-          ++ "] "
-      ++ intercalate " -- "
+  in return $ 
+     -- (xcolor "linec" $ sp lineColor)
+     --  ++ (xcolor "fillc" $ sp fillColor)
+     --  ++ (lineCommand sp 
+     --      (dashProperties (sp dashPhase) (sp dashes))
+     --      (lineStyle (sp lineCap) (sp lineJoin) (sp miterLimit))
+     --     )
+     --  ++ "["
+     --      ++ (lineColorDesc sp)
+     --      ++ ",line width="
+     --      ++ (printNum $ sp lineWidth)
+     --      ++ "] "
+     --  ++
+      intercalate " -- "
           (map (\(x,y) -> "(" ++ (printNum x) ++ "," ++ (printNum y) ++ ")") a)
       ++ (if (sp closePath) then " -- cycle" else "")
       ++ ";\n"
@@ -110,6 +113,11 @@ dashPattern :: Bool -> [Float] -> String
 dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " " 
                        ++ dashPattern (not b) xs
 dashPattern _ _ = ""
+
+-- * Style related commands
+
+styleArguments :: StyleProperties -> [Strings]
+styleArguments = [""]
 
 -- * TikZ/PGF & xcolor Commands
 
