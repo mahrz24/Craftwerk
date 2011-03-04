@@ -1,5 +1,5 @@
 -- |
--- Module      :  Craftwerk.Core.Style
+-- Module      :  Craftwerk.Core.Driver.Tikz
 -- Copyright   :  (c) Malte Harder 2011
 -- License     :  MIT
 -- Maintainer  :  Malte Harder <malte.harder@gmail.com>
@@ -21,29 +21,45 @@ import Text.Printf
 import Control.Monad
 import Control.Monad.Reader
 
-data Context = Context { styleP :: StyleProperties }
+data Context = Context { styleP :: StyleProperties 
+                       , fillDepth :: Int
+                       , strokeDepth :: Int
+                       }
 
 -- | Convert a Craftwerk 'Figure' to a TikZ picture environment string
 figureToTikzPicture :: Figure -> String
-figureToTikzPicture f = 
-  environment "tikzpicture" [] (runReader (figureToTikzPictureWithStyle f) $
-  Context { styleP = defaultStyle })
-  
+figureToTikzPicture f =
+  environment "tikzpicture" (styleArguments defaultStyle) $
+  xcolor "linec" (getProperty defaultStyle lineColor) ++
+  xcolor "fillc" (getProperty defaultStyle fillColor) ++
+  (runReader (figureToTikzPictureWithStyle f) $
+   Context { styleP = defaultStyle
+           , fillDepth = 0
+           , strokeDepth = 0})
+
 figureToTikzPictureWithStyle :: Figure -> Reader Context String
 figureToTikzPictureWithStyle Blank = return ""
-figureToTikzPictureWithStyle (Style ns a) =
-  local (\c -> c { styleP = mergeProperties (styleP c) ns}) $
-  (figureToTikzPictureWithStyle a)
+figureToTikzPictureWithStyle (Style ns a) = 
+  local (\c -> c { styleP = mergeProperties (styleP c) ns
+                 , fillDepth = (fillDepth c) + (maybeToInt $ fillColor ns)
+                 , strokeDepth = (strokeDepth c) + (maybeToInt $ lineColor ns)
+                 }) $ (do
+    c <- ask
+    prependColor (scopePrefix (strokeDepth c) ++ "linec") ns lineColor
+      $ prependColor (scopePrefix (fillDepth c) ++ "fillc") ns fillColor
+      $ liftM (scope $ styleArguments ns)
+      (figureToTikzPictureWithStyle a))
+
 
 figureToTikzPictureWithStyle (Transform (Rotate r) a) =
   liftM (scope (numArgumentList [("rotate",r,"")]))
   (figureToTikzPictureWithStyle a)
-  
-figureToTikzPictureWithStyle (Transform (Scale (x,y)) a) =  
-  liftM (scope (numArgumentList [("xscale",x,"cm"),("yscale",y,"cm")])) 
+
+figureToTikzPictureWithStyle (Transform (Scale (x,y)) a) =
+  liftM (scope (numArgumentList [("xscale",x,"cm"),("yscale",y,"cm")]))
   (figureToTikzPictureWithStyle a)
 
-figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) =  
+figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) =
   liftM (scope (numArgumentList [("xshift",x,"cm"),("yshift",y,"cm")]))
   (figureToTikzPictureWithStyle a)
 
@@ -52,90 +68,84 @@ figureToTikzPictureWithStyle (Composition a) =
 
 figureToTikzPictureWithStyle (Text a) = return $ node a
 
-figureToTikzPictureWithStyle (Line a) = do  
-  c <- ask
+figureToTikzPictureWithStyle (Line a) = ask >>= \c ->
   let sp = getProperty (styleP c)
-      sLineColor = sp lineColor
-      sFillColor = sp fillColor
-  return $ (xcolor "linec" $ sp lineColor)
-      ++ (xcolor "fillc" $ sp fillColor)
-      ++ (lineCommand sp 
-          (dashProperties (sp dashPhase) (sp dashes))
-          (lineStyle (sp lineCap) (sp lineJoin) (sp miterLimit))
-         )
-      ++ "["
-          ++ (lineColorDesc sp)
-          ++ ",line width="
-          ++ (printNum $ sp lineWidth)
-          ++ "] "
-      ++ intercalate " -- "
-          (map (\(x,y) -> "(" ++ (printNum x) ++ "," ++ (printNum y) ++ ")") a)
-      ++ (if (sp closePath) then " -- cycle" else "")
-      ++ ";\n"
+      fc = (scopePrefix (fillDepth c) ++ "fillc")
+      lc = (scopePrefix (strokeDepth c) ++ "linec")
+  in return $ tikzCommand "path" (lineColorArgs sp fc lc)
+     ((pathToString a) ++ (if (sp closePath) then " -- cycle" else ""))
+  where lineColorArgs sp fc lc =
+          if (sp fill) && (sp stroke) then
+            ["fill=" ++ fc,"draw=" ++ lc]
+          else
+            if (sp fill) then
+              ["fill="++fc]
+            else
+              ["draw="++lc]
 
-lineColorDesc sp = if (sp fill) && (sp stroke) then
-                  "fill=fillc,draw=linec"
-                else
-                  if (sp fill) then
-                    "color=fillc"
-                    else
-                    "color=linec"
-                    
+-- * Style related commands
 
-lineCommand sp dp ls  = if (sp fill) && (sp stroke) then
-                  "\\filldraw[" ++ dp ++ "," ++ ls ++ "]"
-                else
-                  if (sp fill) then
-                    "\\fill"
-                    else
-                    "\\draw[" ++ dp ++ "," ++ ls ++ "]"
+styleArguments :: StyleProperties -> [String]
+styleArguments s =
+  let sp = getProperty s
+  in argumentList 
+     ( extract lineCap (\p -> [("line cap", tikzLineCap p)]) ++ 
+       extract lineJoin (\p -> [("line join", tikzLineJoin p)]) ++
+       extract miterLimit (\p -> [("miter limit", printNum p)]) ++
+       extract lineWidth (\p -> [("line width", printNum p)]) ++
+       extract dashPhase (\p -> [("dash phase", printNum p)]) 
+     )
+     ++ maybe [] (\p ->
+          if (length p) > 0 then
+            argumentList [("dash pattern", dashPattern True $ p)]
+          else
+            ["solid"]) (dashes s)
+  where extract prop f = maybe [] f (prop s)
 
-lineStyle lc lj ml = 
-  "line cap=" ++ 
-  (case lc of
-    CapRect -> "rect"
-    CapButt -> "butt"
-    CapRound -> "round")
-  ++ ", line join=" ++
-  (case lj of
-    JoinRound -> "round"
-    JoinBevel -> "bevel"
-    JoinMiter -> "miter")
-  ++ ", miter limit=" ++ (printNum ml) 
+tikzLineCap lc = case lc of
+  CapRect -> "rect"
+  CapButt -> "butt"
+  CapRound -> "round"
 
-dashProperties phase pattern = if (length pattern) > 0 then
-                      "dash phase=" ++ (printNum phase) ++ 
-                      ",dash pattern=" ++ (dashPattern True pattern)  ++""
-                    else
-                      "solid"
-                      
+tikzLineJoin lj = case lj of
+  JoinRound -> "round"
+  JoinBevel -> "bevel"
+  JoinMiter -> "miter"
+
 dashPattern :: Bool -> [Float] -> String
-dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " " 
+dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " "
                        ++ dashPattern (not b) xs
 dashPattern _ _ = ""
 
--- * Style to TikZ commands
-
 -- * TikZ/PGF & xcolor Commands
 
-xcolor name (RGBA r g b a) = 
-  texCommand "definecolor" 
+xcolor name (RGBA r g b a) =
+  texCommand "definecolor"
   [ name
   , "rgb"
   , (printf "%.2f,%.2f,%.2f" r g b)]
-                             
+
+prependColor name style prop =
+  maybe (liftM id) (\p -> liftM ((++) (xcolor name $ p))) (prop style)
+
 scope args body = environment "scope" args body
 
 node n = texCommand "node" [n]
 
+pathToString p =
+  intercalate " -- " $
+  map (\(x,y) -> "(" ++ (printNum x) ++ "," ++ (printNum y) ++ ")") p
+
+scopePrefix n = take n $ repeat 'T'
+
 -- * TeX Output
 
-printNum n = printf "%.4f" n
+printNum n = printf "%f" n
 
-argumentList argList = 
+argumentList argList =
   map (\(l,n) -> l ++ "=" ++ n) argList
-  
-numArgumentList argList = 
+
+numArgumentList argList =
   map (\(l,n,u) -> l ++ "=" ++ (printNum n) ++ u) argList
 
 tikzArguments :: [String] -> String
@@ -145,16 +155,18 @@ tikzArguments args = "[" ++ (intercalate "," args) ++ "]"
 texArguments :: [String] -> String
 texArguments args = concatMap (\s -> "{" ++ s ++ "}") args
 
-texCommand cmd args = 
+texCommand cmd args =
   "\\" ++ cmd ++ (texArguments args) ++ "\n"
 
-tikzCommand cmd args body = 
-  "\\" ++ cmd ++ (tikzArguments args) 
+tikzCommand cmd args body =
+  "\\" ++ cmd ++ (tikzArguments args)
   ++ " " ++ body ++ ";\n"
 
-environment env args body = 
-  "\\begin{" ++ env ++ "}" ++ (tikzArguments args) ++ "\n" 
-  ++ body 
+environment env args body =
+  "\\begin{" ++ env ++ "}" ++ (tikzArguments args) ++ "\n"
+  ++ body
   ++ "\\end{" ++ env ++ "}\n"
 
+-- * Other helpers
+maybeToInt s = maybe 0 (const 1) s
 

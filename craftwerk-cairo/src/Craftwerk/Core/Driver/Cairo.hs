@@ -22,7 +22,7 @@ import Graphics.Rendering.Cairo (Matrix)
 import Control.Monad
 import Control.Monad.Reader
 
-data Context = Context { style :: StyleProperties
+data Context = Context { styleP :: StyleProperties
                        , strokeMatrix :: Matrix
                        }
 
@@ -60,6 +60,11 @@ figureToRenderContextWithStyle (Line a) = ask >>= \c -> lift $ do
                       cairoPath a sp
                       Cairo.fill)
   when (sp stroke) (do cairoSetColor (sp lineColor)
+                       cairoSetLineJoin (sp lineJoin) 
+                       cairoSetLineCap (sp lineCap)
+                       Cairo.setMiterLimit (float2Double $ sp miterLimit)
+                       Cairo.setDash (map float2Double $ sp dashes) 
+                         (float2Double $ sp dashPhase)
                        cairoPath a sp
                        Cairo.setLineWidth (float2Double $ sp lineWidth)
                        Cairo.save
@@ -80,6 +85,19 @@ fnC f = (uncurry f) . pointConvert
 
 cairoSetColor (RGBA r g b a) =
   Cairo.setSourceRGB (float2Double r) (float2Double g) (float2Double b)
+  
+cairoSetLineJoin lj = 
+  Cairo.setLineJoin (case lj of
+                        JoinRound -> Cairo.LineJoinRound
+                        JoinBevel ->  Cairo.LineJoinBevel
+                        JoinMiter ->  Cairo.LineJoinMiter)
+
+
+cairoSetLineCap lc = 
+  Cairo.setLineCap (case lc of
+                       CapRect -> Cairo.LineCapSquare
+                       CapButt ->  Cairo.LineCapButt
+                       CapRound ->  Cairo.LineCapRound)
 
 cairoPath a sp = do (fnC Cairo.moveTo) (head a)
                     sequence_ (map (fnC Cairo.lineTo) a)

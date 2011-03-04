@@ -4,7 +4,6 @@
 -- License     :  MIT
 -- Maintainer  :  Malte Harder <malte.harder@gmail.com>
 --
---
 
 module Craftwerk.Core.Style (
   -- * Data types
@@ -37,6 +36,7 @@ module Craftwerk.Core.Style (
 
   -- * Named styles
   , emptyStyle
+  , newStyle
   , defaultStyle
 
   -- * Property values
@@ -87,6 +87,8 @@ emptyStyle = StyleProperties
              Nothing
              Nothing
              
+-- | Alias for empty style, makes style construction look nicer
+newStyle = emptyStyle
 
 -- | The default style used at the root node of any 'Figure'.
 defaultStyle :: StyleProperties
