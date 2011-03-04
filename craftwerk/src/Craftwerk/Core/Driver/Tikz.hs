@@ -83,6 +83,7 @@ figureToTikzPictureWithStyle (Line a) = ask >>= \c ->
             else
               ["draw="++lc]
 
+
 -- * Style related commands
 
 styleArguments :: StyleProperties -> [String]
@@ -116,6 +117,8 @@ dashPattern :: Bool -> [Float] -> String
 dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " "
                        ++ dashPattern (not b) xs
 dashPattern _ _ = ""
+
+
 
 -- * TikZ/PGF & xcolor Commands
 
