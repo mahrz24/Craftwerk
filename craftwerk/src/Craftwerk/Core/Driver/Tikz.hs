@@ -52,9 +52,12 @@ figureToTikzPictureWithStyle (Composition a) =
 
 figureToTikzPictureWithStyle (Text a) = return $ node a
 
-figureToTikzPictureWithStyle (Line a) =  ask >>= \c ->
+figureToTikzPictureWithStyle (Line a) = do  
+  c <- ask
   let sp = getProperty (styleP c)
-  in return $ (xcolor "linec" $ sp lineColor)
+      sLineColor = sp lineColor
+      sFillColor = sp fillColor
+  return $ (xcolor "linec" $ sp lineColor)
       ++ (xcolor "fillc" $ sp fillColor)
       ++ (lineCommand sp 
           (dashProperties (sp dashPhase) (sp dashes))
@@ -111,6 +114,8 @@ dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " "
                        ++ dashPattern (not b) xs
 dashPattern _ _ = ""
 
+-- * Style to TikZ commands
+
 -- * TikZ/PGF & xcolor Commands
 
 xcolor name (RGBA r g b a) = 
@@ -139,7 +144,6 @@ tikzArguments args = "[" ++ (intercalate "," args) ++ "]"
 
 texArguments :: [String] -> String
 texArguments args = concatMap (\s -> "{" ++ s ++ "}") args
-
 
 texCommand cmd args = 
   "\\" ++ cmd ++ (texArguments args) ++ "\n"
