@@ -18,6 +18,7 @@ import Craftwerk.Core.Style
 
 import qualified Graphics.Rendering.Cairo as Cairo
 import Graphics.Rendering.Cairo (Matrix)
+import qualified Graphics.Rendering.Cairo.Matrix as Matrix
 
 import Control.Monad
 import Control.Monad.Reader
@@ -45,11 +46,15 @@ figureToRenderContextWithStyle (Style ns a) =
 figureToRenderContextWithStyle (Transform t a) = do
   lift $ Cairo.save >>
     case t of
-      Rotate r    -> Cairo.rotate (float2Double r)
+      Rotate r    -> Cairo.rotate (radians $ float2Double r)
       Scale p     -> fnC Cairo.scale p
       Translate p -> fnC Cairo.translate p
   figureToRenderContextWithStyle a 
   lift $ Cairo.restore
+  
+figureToRenderContextWithStyle (Canvas t a) = 
+  local (\c -> c { strokeMatrix = transformationMatrix t (strokeMatrix c)
+                 }) $ (figureToRenderContextWithStyle (Transform t a))
 
 figureToRenderContextWithStyle (Composition a) =
   mapM_ figureToRenderContextWithStyle a
@@ -102,3 +107,13 @@ cairoSetLineCap lc =
 cairoPath a sp = do (fnC Cairo.moveTo) (head a)
                     sequence_ (map (fnC Cairo.lineTo) a)
                     when (sp closePath) (Cairo.closePath)
+                    
+radians :: (Floating a) => a -> a
+radians n = n / (360 / (2 * pi))
+
+transformationMatrix t m = case t of
+  Rotate r    -> 
+    Matrix.rotate (radians $ float2Double r) m
+  Scale p     -> fnC Matrix.scale p m
+  Translate p -> fnC Matrix.translate p m
+

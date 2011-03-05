@@ -19,6 +19,7 @@ module Craftwerk.Core.Figure (
     
     -- * Primitive wrappers
   , blank
+  , canvas
   , rotate
   , scale
   , translate
@@ -66,6 +67,10 @@ instance Monoid Figure where
   
 blank :: Figure
 blank = Blank
+
+canvas :: Figure -> Figure
+canvas (Transform t f) = Canvas t f
+canvas f = f
 
 rotate :: Float -> Figure -> Figure
 rotate r = Transform (Rotate r)

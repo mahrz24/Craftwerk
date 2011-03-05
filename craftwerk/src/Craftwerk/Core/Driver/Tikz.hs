@@ -24,6 +24,8 @@ import Control.Monad.Reader
 data Context = Context { styleP :: StyleProperties 
                        , fillDepth :: Int
                        , strokeDepth :: Int
+                       , coordinateMatrix :: String
+                       , inverseCoordinateMatrix :: String
                        }
 
 -- | Convert a Craftwerk 'Figure' to a TikZ picture environment string
@@ -35,7 +37,9 @@ figureToTikzPicture f =
   (runReader (figureToTikzPictureWithStyle f) $
    Context { styleP = defaultStyle
            , fillDepth = 0
-           , strokeDepth = 0})
+           , strokeDepth = 0
+           , coordinateMatrix = ""
+           , inverseCoordinateMatrix = ""})
 
 figureToTikzPictureWithStyle :: Figure -> Reader Context String
 figureToTikzPictureWithStyle Blank = return ""
@@ -51,15 +55,64 @@ figureToTikzPictureWithStyle (Style ns a) =
       $ liftM (scope $ styleArguments ns)
       (figureToTikzPictureWithStyle a))
 
+
+figureToTikzPictureWithStyle (Canvas (Rotate r) a) = ask >>= \c ->
+  liftM (scope [])
+  $ liftM ((++) ((coordinateMatrix c) ++ 
+                 (pgfLowLevel "rotate" (printNum r)) ++ 
+                 (inverseCoordinateMatrix c)))
+  $ (figureToTikzPictureWithStyle a)
+
+figureToTikzPictureWithStyle (Canvas (Scale (x,y)) a) = ask >>= \c ->
+  liftM (scope [])
+  $ liftM ((++) ((coordinateMatrix c) ++ 
+                 (pgfLowLevel "xscale" (printNum x)) ++ 
+                 (pgfLowLevel "yscale" (printNum y)) ++ 
+                 (inverseCoordinateMatrix c)))
+  $ (figureToTikzPictureWithStyle a)
+
+figureToTikzPictureWithStyle (Canvas (Translate (x,y)) a) = ask >>= \c ->
+  liftM (scope [])
+  $ liftM ((++) ((coordinateMatrix c) ++ 
+                 (pgfLowLevel "xshift" $ (printNum x) ++ "cm") ++ 
+                 (pgfLowLevel "yshift" $ (printNum y) ++ "cm") ++ 
+                 (inverseCoordinateMatrix c)))
+  $ (figureToTikzPictureWithStyle a)
+
 figureToTikzPictureWithStyle (Transform (Rotate r) a) =
+  local (\c -> c { coordinateMatrix = 
+                      (coordinateMatrix c) ++ 
+                      (pgfLowLevel "rotate" (printNum r))
+                 , inverseCoordinateMatrix =
+                        (pgfLowLevel "rotate" (printNum $ -r)) ++
+                        (inverseCoordinateMatrix c) 
+                 }) $
   liftM (scope (numArgumentList [("rotate",r,"")]))
   (figureToTikzPictureWithStyle a)
 
 figureToTikzPictureWithStyle (Transform (Scale (x,y)) a) =
-  liftM (scope (numArgumentList [("xscale",x,"cm"),("yscale",y,"cm")]))
+    local (\c -> c { coordinateMatrix = 
+                      (coordinateMatrix c) ++ 
+                      (pgfLowLevel "xscale" (printNum x)) ++
+                      (pgfLowLevel "yscale" (printNum y))
+                 , inverseCoordinateMatrix =
+                        (pgfLowLevel "xscale" (printNum $ 1/x)) ++
+                        (pgfLowLevel "yscale" (printNum $ 1/y)) ++
+                        (inverseCoordinateMatrix c) 
+                 }) $
+  liftM (scope (numArgumentList [("xscale",x,""),("yscale",y,"")]))
   (figureToTikzPictureWithStyle a)
 
 figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) =
+    local (\c -> c { coordinateMatrix = 
+                      (coordinateMatrix c) ++ 
+                      (pgfLowLevel "xshift" $ (printNum x) ++ "cm") ++
+                      (pgfLowLevel "yshift" $ (printNum y) ++ "cm")
+                 , inverseCoordinateMatrix =
+                        (pgfLowLevel "xshift" $ (printNum $ -x) ++ "cm") ++
+                        (pgfLowLevel "yshift" $ (printNum $ -y) ++ "cm") ++
+                        (inverseCoordinateMatrix c) 
+                 }) $
   liftM (scope (numArgumentList [("xshift",x,"cm"),("yshift",y,"cm")]))
   (figureToTikzPictureWithStyle a)
 
@@ -137,7 +190,13 @@ pathToString p =
   intercalate " -- " $
   map (\(x,y) -> "(" ++ (printNum x) ++ "," ++ (printNum y) ++ ")") p
 
+canvasTransform argList = 
+  ["transform canvas=" ++ (tikzSubArguments $ numArgumentList argList)]
+
 scopePrefix n = take n $ repeat 'T'
+
+pgfLowLevel t p = 
+  texCommand "pgflowlevel" [texCommand' ("pgftransform" ++ t) [p]]
 
 -- * TeX Output
 
@@ -148,6 +207,10 @@ argumentList argList =
 
 numArgumentList argList =
   map (\(l,n,u) -> l ++ "=" ++ (printNum n) ++ u) argList
+  
+tikzSubArguments :: [String] -> String
+tikzSubArguments [] = ""
+tikzSubArguments args = "{" ++ (intercalate "," args) ++ "}"
 
 tikzArguments :: [String] -> String
 tikzArguments [] = ""
@@ -158,6 +221,9 @@ texArguments args = concatMap (\s -> "{" ++ s ++ "}") args
 
 texCommand cmd args =
   "\\" ++ cmd ++ (texArguments args) ++ "\n"
+
+texCommand' cmd args =
+  "\\" ++ cmd ++ (texArguments args)
 
 tikzCommand cmd args body =
   "\\" ++ cmd ++ (tikzArguments args)
