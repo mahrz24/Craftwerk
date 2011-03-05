@@ -118,12 +118,6 @@ dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " "
                        ++ dashPattern (not b) xs
 dashPattern _ _ = ""
 
-
--- * Style related commands
-
-styleArguments :: StyleProperties -> [Strings]
-styleArguments = [""]
-
 -- * TikZ/PGF & xcolor Commands
 
 xcolor name (RGBA r g b a) =
