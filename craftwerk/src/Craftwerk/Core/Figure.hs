@@ -47,6 +47,7 @@ type Path = [Point]
 -- | The main datatype describing an arbitrary figure.
 data Figure = Blank
             | Transform Transform Figure
+            | Canvas Transform Figure
             | Composition [Figure]
             | Style StyleProperties Figure
             | Line Path
