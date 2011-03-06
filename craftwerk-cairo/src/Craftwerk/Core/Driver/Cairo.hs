@@ -63,21 +63,25 @@ figureToRenderContextWithStyle (Composition a) =
 
 figureToRenderContextWithStyle (Path a) = ask >>= \c -> lift $ do
   let sp = getProperty $ styleP c
-  when (sp fill ) (do cairoSetColor (sp fillColor)
-                      cairoPath a sp
-                      Cairo.fill)
-  when (sp stroke) (do cairoSetColor (sp lineColor)
-                       cairoSetLineJoin (sp lineJoin) 
-                       cairoSetLineCap (sp lineCap)
-                       Cairo.setMiterLimit (float2Double $ sp miterLimit)
-                       Cairo.setDash (map float2Double $ sp dashes) 
-                         (float2Double $ sp dashPhase)
-                       cairoPath a sp
-                       Cairo.setLineWidth (float2Double $ sp lineWidth)
-                       Cairo.save
-                       Cairo.setMatrix (strokeMatrix c)
-                       Cairo.stroke
-                       Cairo.restore)
+  when (sp clip) (do cairoPath a sp
+                     Cairo.clip)   
+  when (sp fill && (not $ sp clip)) 
+    (do cairoSetColor (sp fillColor)
+        cairoPath a sp
+        Cairo.fill)
+  when (sp stroke && (not $ sp clip)) 
+    (do cairoSetColor (sp lineColor)
+        cairoSetLineJoin (sp lineJoin) 
+        cairoSetLineCap (sp lineCap)
+        Cairo.setMiterLimit (float2Double $ sp miterLimit)
+        Cairo.setDash (map float2Double $ sp dashes) 
+          (float2Double $ sp dashPhase)
+        cairoPath a sp
+        Cairo.setLineWidth (float2Double $ sp lineWidth)
+        Cairo.save
+        Cairo.setMatrix (strokeMatrix c)
+        Cairo.stroke
+        Cairo.restore)
     
 figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill
 

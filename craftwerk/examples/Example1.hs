@@ -12,8 +12,10 @@ main = let w = 10
              $ composition
                [
                  scale (10,10) $ line unitRectangle
+               , style newStyle { clip = yes } $ Circle (5,5) 5
                , path [MoveTo (0,0),  CurveSegment (4,4) (1,5) (5,1)]
-               , path [MoveTo (6,2),  ArcSegment (6,2) 180 45 2]
+               , path [MoveTo (6,2),  ArcSegment (6,2) 160 45 2]
+               , path [MoveTo (6,2),  ArcSegment (6,2) 45 160 2]
                , Circle (0,0) 1
                , style newStyle { lineWidth = Just $ 1, fill = no } $ Grid (5,5) 0.5 0.5
                , canvas . (scale (1.5,2)) $ 

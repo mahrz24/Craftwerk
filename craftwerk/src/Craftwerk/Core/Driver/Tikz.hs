@@ -146,13 +146,16 @@ figurePath p = ask >>= \c ->
 -- * Style related commands
 
 lineColorArgs sp fc lc =
-  if (sp fill) && (sp stroke) then
-    ["fill=" ++ fc,"draw=" ++ lc]
+  if (sp clip) then
+    ["clip"]
   else
-    if (sp fill) then
-      ["fill="++fc]
+    if (sp fill) && (sp stroke) then
+      ["fill=" ++ fc,"draw=" ++ lc]
     else
-      ["draw="++lc]    
+      if (sp fill) then
+        ["fill="++fc]
+      else
+        ["draw="++lc]    
     
 styleArguments :: StyleProperties -> [String]
 styleArguments s =
@@ -197,6 +200,7 @@ xcolor name (RGBA r g b a) =
 prependColor name style prop =
   maybe (liftM id) (\p -> liftM ((++) (xcolor name $ p))) (prop style)
 
+scope [] body = body
 scope args body = environment "scope" args body
 
 node n = texCommand "node" [n]

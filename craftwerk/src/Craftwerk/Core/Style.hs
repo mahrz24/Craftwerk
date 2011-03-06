@@ -7,20 +7,7 @@
 
 module Craftwerk.Core.Style (
   -- * Data types
-    StyleProperties(
-                     StyleProperties
-                   , lineWidth
-                   , lineColor
-                   , fillColor
-                   , stroke
-                   , fill
-                   , closePath
-                   , dashes
-                   , dashPhase
-                   , lineCap
-                   , lineJoin 
-                   , miterLimit 
-                   )
+    StyleProperties(..)
     
     , LineCap(
                CapRect
@@ -64,6 +51,7 @@ data StyleProperties =
                   , fillColor :: Maybe Color
                   , fill :: Maybe Bool
                   , stroke :: Maybe Bool
+                  , clip :: Maybe Bool
                   , closePath :: Maybe Bool
                   , dashes :: Maybe [Float]
                   , dashPhase :: Maybe Float
@@ -78,6 +66,7 @@ emptyStyle = StyleProperties
              Nothing 
              Nothing 
              Nothing 
+             Nothing
              Nothing 
              Nothing 
              Nothing
@@ -98,6 +87,7 @@ defaultStyle =
                   , fillColor = Just white
                   , stroke = Just True
                   , fill = Just False
+                  , clip = Just False
                   , closePath = Just False
                   , dashes = Just [] :: Maybe [Float]
                   , dashPhase = Just 0.0
@@ -138,6 +128,7 @@ mergeProperties s t =
                   , fillColor = mergeProperty s t fillColor
                   , fill = mergeProperty s t fill
                   , stroke = mergeProperty s t stroke
+                  , clip = mergeProperty s t clip
                   , closePath = mergeProperty s t closePath
                   , dashes = mergeProperty s t dashes
                   , dashPhase = mergeProperty s t dashPhase
