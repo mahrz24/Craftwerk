@@ -27,6 +27,7 @@ import Control.Monad.Reader
 
 data Context = Context { styleP :: StyleProperties
                        , strokeMatrix :: Matrix
+                       , generic :: Bool
                        }
 
 type Render a = ReaderT Context Cairo.Render a
@@ -38,6 +39,7 @@ figureToRenderContext f = do
   runReaderT (figureToRenderContextWithStyle f) $
     Context { styleP = defaultStyle
             , strokeMatrix = strokeMatrix
+            , generic = False
             }
 
 figureToRenderContextWithStyle Blank = return ()
@@ -61,27 +63,34 @@ figureToRenderContextWithStyle (Canvas t a) =
 figureToRenderContextWithStyle (Composition a) =
   mapM_ figureToRenderContextWithStyle a
 
-figureToRenderContextWithStyle (Path a) = ask >>= \c -> lift $ do
+figureToRenderContextWithStyle (Generic a) = 
+  local (\c -> c { generic = True
+                 }) $ (figureToRenderContextWithStyle a)
+
+figureToRenderContextWithStyle (Path a) = ask >>= \c -> 
   let sp = getProperty $ styleP c
-  when (sp clip) (do cairoPath a sp
-                     Cairo.clip)   
-  when (sp fill && (not $ sp clip)) 
-    (do cairoSetColor (sp fillColor)
-        cairoPath a sp
-        Cairo.fill)
-  when (sp stroke && (not $ sp clip)) 
-    (do cairoSetColor (sp lineColor)
-        cairoSetLineJoin (sp lineJoin) 
-        cairoSetLineCap (sp lineCap)
-        Cairo.setMiterLimit (float2Double $ sp miterLimit)
-        Cairo.setDash (map float2Double $ sp dashes) 
-          (float2Double $ sp dashPhase)
-        cairoPath a sp
-        Cairo.setLineWidth (float2Double $ sp lineWidth)
-        Cairo.save
-        Cairo.setMatrix (strokeMatrix c)
-        Cairo.stroke
-        Cairo.restore)
+  in do lift $ do when (sp clip) (do cairoPath a sp
+                                     Cairo.clip)   
+                  when (sp fill && (not $ sp clip)) 
+                    (do cairoSetColor (sp fillColor)
+                        cairoPath a sp
+                        Cairo.fill)
+                  when (sp stroke && (not $ sp clip)) 
+                    (do cairoSetColor (sp lineColor)
+                        cairoSetLineJoin (sp lineJoin) 
+                        cairoSetLineCap (sp lineCap)
+                        Cairo.setMiterLimit (float2Double $ sp miterLimit)
+                        Cairo.setDash (map float2Double $ sp dashes) 
+                           (float2Double $ sp dashPhase)
+                        cairoPath a sp
+                        Cairo.setLineWidth (float2Double $ sp lineWidth)
+                        Cairo.save
+                        Cairo.setMatrix (strokeMatrix c)
+                        Cairo.stroke 
+                        Cairo.restore)
+        -- Avoid running into a deadlock when rendering arrow tips
+        when (not $ generic c) $ figureToRenderContextWithStyle $ (arrowTipsForPath a (sp lineWidth) (sp arrowTips))
+  
     
 figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill
 

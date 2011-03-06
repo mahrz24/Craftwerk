@@ -13,7 +13,10 @@ main = let w = 10
                [
                  scale (10,10) $ line unitRectangle
                , style newStyle { clip = yes } $ Circle (5,5) 5
-               , path [MoveTo (0,0),  CurveSegment (4,4) (1,5) (5,1)]
+               , style newStyle { closePath = no, fill=no, arrowTips = arrow (<=>) } 
+                 $ path [MoveTo (3,2),  CurveSegment (4,4) (1,5) (5,1)]
+               , style newStyle { closePath = no, fill=no, arrowTips = arrow (<==) } 
+                 $ path [MoveTo (3,5),  LineSegment (6,6)]
                , path [MoveTo (6,2),  ArcSegment (6,2) 160 45 2]
                , path [MoveTo (6,2),  ArcSegment (6,2) 45 160 2]
                , Circle (0,0) 1

@@ -7,19 +7,10 @@
 
 module Craftwerk.Core.Style (
   -- * Data types
-    StyleProperties(..)
-    
-    , LineCap(
-               CapRect
-             , CapButt
-             , CapRound
-             )
-    
-    , LineJoin(
-                JoinRound
-              , JoinBevel
-              , JoinMiter
-              )
+      StyleProperties(..)
+    , LineCap(..)
+    , LineJoin(..)
+    , ArrowTip(..)
 
   -- * Named styles
   , emptyStyle
@@ -33,6 +24,13 @@ module Craftwerk.Core.Style (
   -- * Property access and merging
   , getProperty
   , mergeProperties
+    
+    -- * Arrow functions
+  , arrow
+  , (<=>)
+  , (===)
+  , (==>)
+  , (<==)
 
   ) where
 
@@ -40,6 +38,11 @@ import Craftwerk.Core.Color
 import Craftwerk.Core.ColorNames
 
 import Data.Maybe
+
+data ArrowDummy = ArrowDummy deriving Show
+data ArrowTip = TipNone |  TipDefault deriving (Show,Eq)
+
+type ArrowTips = (ArrowTip, ArrowTip)
 
 data LineCap = CapRect | CapButt | CapRound deriving (Show,Eq)
 data LineJoin = JoinRound | JoinBevel | JoinMiter deriving (Show,Eq)
@@ -58,7 +61,9 @@ data StyleProperties =
                   , lineCap :: Maybe LineCap
                   , lineJoin :: Maybe LineJoin
                   , miterLimit :: Maybe Float
+                  , arrowTips :: Maybe ArrowTips
                   } deriving (Show, Eq)
+                             
 
 -- | A style where no property has been set.
 emptyStyle :: StyleProperties
@@ -69,6 +74,7 @@ emptyStyle = StyleProperties
              Nothing
              Nothing 
              Nothing 
+             Nothing
              Nothing
              Nothing
              Nothing
@@ -94,6 +100,7 @@ defaultStyle =
                   , lineCap = Just CapButt
                   , lineJoin = Just JoinMiter
                   , miterLimit = Just 10.0
+                  , arrowTips = Just (TipNone, TipNone)
                   }
 
 -- | Alias for 'Just True' to make style specification more convenient.
@@ -135,5 +142,22 @@ mergeProperties s t =
                   , lineCap = mergeProperty s t lineCap
                   , lineJoin = mergeProperty s t lineJoin
                   , miterLimit = mergeProperty s t miterLimit
+                  , arrowTips = mergeProperty s t arrowTips
                   }
+  
+-- * Arrow styles
 
+arrow :: (ArrowDummy -> ArrowTips) -> Maybe ArrowTips
+arrow f = Just (f ArrowDummy)
+
+(<=>) :: ArrowDummy  -> ArrowTips
+(<=>) _ = (TipDefault, TipDefault)
+
+(===) :: ArrowDummy  -> ArrowTips
+(===) _ = (TipNone, TipNone)
+
+(==>) :: ArrowDummy  -> ArrowTips
+(==>) _ = (TipNone, TipDefault)
+
+(<==) :: ArrowDummy  -> ArrowTips
+(<==) _ = (TipDefault, TipNone)

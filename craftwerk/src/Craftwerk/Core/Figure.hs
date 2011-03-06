@@ -67,6 +67,7 @@ data Figure = Blank
             | Circle Point Float
             | Grid Vector Float Float
             | Text String
+            | Generic Figure
             deriving (Show, Eq)
 
 data Transform = Rotate Float

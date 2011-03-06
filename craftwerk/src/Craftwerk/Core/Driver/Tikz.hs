@@ -141,11 +141,13 @@ figurePath p = ask >>= \c ->
   let sp = getProperty (styleP c)
       fc = (scopePrefix (fillDepth c) ++ "fillc")
       lc = (scopePrefix (strokeDepth c) ++ "linec")
-  in return $ tikzCommand "path" (lineColorArgs sp fc lc) p
+      at = (sp arrowTips)
+  in return $ tikzCommand "path" (lineColorArgs sp fc lc at) p
 
 -- * Style related commands
 
-lineColorArgs sp fc lc =
+lineColorArgs sp fc lc at =
+  (arrowTipToArg at) ++
   if (sp clip) then
     ["clip"]
   else
@@ -156,7 +158,15 @@ lineColorArgs sp fc lc =
         ["fill="++fc]
       else
         ["draw="++lc]    
-    
+        
+arrowTipToArg (TipNone,TipNone) = []
+arrowTipToArg (l,r) = [(leftTip l) ++ "-" ++ (rightTip r)]
+
+leftTip TipDefault = "<"
+leftTip TipNone = ""
+rightTip TipDefault = ">"
+rightTip TipNone = ""
+
 styleArguments :: StyleProperties -> [String]
 styleArguments s =
   let sp = getProperty s
