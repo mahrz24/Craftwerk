@@ -121,24 +121,39 @@ figureToTikzPictureWithStyle (Composition a) =
 
 figureToTikzPictureWithStyle (Text a) = return $ node a
 
-figureToTikzPictureWithStyle (Line a) = ask >>= \c ->
+figureToTikzPictureWithStyle (Path a) = ask >>= \c ->
+   let sp = getProperty (styleP c)
+   in figurePath $ ((pathToString a) ++ 
+                    (if (sp closePath) then " -- cycle" else ""))
+
+figureToTikzPictureWithStyle (Circle ctr r) = 
+  figurePath $ (pointToString ctr) ++ " circle (" ++ (printNum r) ++ "cm)"
+     
+figureToTikzPictureWithStyle (Grid v stepx stepy) = 
+  figurePath $ "(0,0) grid[xstep=" 
+  ++ (printNum stepx) ++ "cm,ystep=" 
+  ++ (printNum stepy) ++ "]" 
+  ++ (pointToString v)
+
+-- * Drawing helpers
+
+figurePath p = ask >>= \c ->
   let sp = getProperty (styleP c)
       fc = (scopePrefix (fillDepth c) ++ "fillc")
       lc = (scopePrefix (strokeDepth c) ++ "linec")
-  in return $ tikzCommand "path" (lineColorArgs sp fc lc)
-     ((pathToString a) ++ (if (sp closePath) then " -- cycle" else ""))
-  where lineColorArgs sp fc lc =
-          if (sp fill) && (sp stroke) then
-            ["fill=" ++ fc,"draw=" ++ lc]
-          else
-            if (sp fill) then
-              ["fill="++fc]
-            else
-              ["draw="++lc]
-
+  in return $ tikzCommand "path" (lineColorArgs sp fc lc) p
 
 -- * Style related commands
 
+lineColorArgs sp fc lc =
+  if (sp fill) && (sp stroke) then
+    ["fill=" ++ fc,"draw=" ++ lc]
+  else
+    if (sp fill) then
+      ["fill="++fc]
+    else
+      ["draw="++lc]    
+    
 styleArguments :: StyleProperties -> [String]
 styleArguments s =
   let sp = getProperty s
@@ -186,9 +201,20 @@ scope args body = environment "scope" args body
 
 node n = texCommand "node" [n]
 
-pathToString p =
-  intercalate " -- " $
-  map (\(x,y) -> "(" ++ (printNum x) ++ "," ++ (printNum y) ++ ")") p
+pathToString (p:ps) = (segmentToString p) ++ (pathToString ps) 
+pathToString [] = ""
+
+segmentToString (MoveTo p) = 
+  pointToString p
+segmentToString (LineSegment p) = 
+  " -- " ++ (pointToString p)
+segmentToString (ArcSegment p sa ea r) = 
+  " -- " ++ (pointToString p) ++ " arc " ++ (printf "(%f:%f:%fcm)" sa ea r)
+segmentToString (CurveSegment p c1 c2) =
+  " .. controls " ++ (pointToString c1) ++ "and " 
+  ++ (pointToString c2) ++ ".. " ++ (pointToString p) 
+
+pointToString (x,y) = "(" ++ (printNum x) ++ "," ++ (printNum y) ++ ") "
 
 canvasTransform argList = 
   ["transform canvas=" ++ (tikzSubArguments $ numArgumentList argList)]

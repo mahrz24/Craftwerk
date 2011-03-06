@@ -56,7 +56,8 @@ Library
                     Craftwerk.Core.ColorNames,
                     Craftwerk.Core.Style,
                     Craftwerk.Core.Figure,
-                    Craftwerk.Core.Driver.Tikz
+                    Craftwerk.Core.Driver.Tikz,
+                    Craftwerk.Core.Driver.Generic
 
 Executable example1
   Hs-Source-Dirs:       examples

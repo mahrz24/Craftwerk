@@ -16,6 +16,11 @@ main = do displayRender renderFigure
                        $ composition
                        [
                          scale (10,10) $ line unitRectangle
+                       , path [MoveTo (0,0),  CurveSegment (4,4) (1,5) (5,1)]
+                       , path [MoveTo (6,2),  ArcSegment (6,2) 160 45 2]
+                       , path [MoveTo (6,2),  ArcSegment (6,2) 45 160 2]
+                       , Circle (0,0) 1
+                       , style newStyle { lineWidth = Just $ 1, fill = no } $ Grid (5,5) 0.5 0.5
                        , canvas . (scale (1.5,2)) $ 
                          canvas . (rotate 20) $ 
                          canvas . (translate (3,1)) $ 
@@ -24,6 +29,7 @@ main = do displayRender renderFigure
                            translate (2,0) $ rotate 45 $ style newStyle {fillColor = Just red} $ line unitRectangle
                          , scale (2,2) $ translate (0.5,0.5) $ style newStyle {fillColor = Just blue} $ line unitRectangle
                          , translate (0,2) $ canvas . (scale (2,2)) $ style newStyle {fillColor = Just green} $ line unitRectangle
+                        
                          ]
                        ]
                        

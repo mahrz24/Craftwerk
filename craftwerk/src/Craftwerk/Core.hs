@@ -20,6 +20,7 @@ module Craftwerk.Core
        , module Craftwerk.Core.Figure
 
        , module Craftwerk.Core.Driver.Tikz
+       , module Craftwerk.Core.Driver.Generic
        ) where
 
 import Craftwerk.Core.Color
@@ -28,4 +29,5 @@ import Craftwerk.Core.Style
 import Craftwerk.Core.Figure
 
 import Craftwerk.Core.Driver.Tikz
+import Craftwerk.Core.Driver.Generic
 

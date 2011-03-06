@@ -13,7 +13,9 @@ module Craftwerk.Core.Figure (
   -- * Types and data types
     Point
   , Vector
+  , Line
   , Path
+  , Segment(..) 
   , Figure(..)
   , Transform(..)
     
@@ -25,6 +27,7 @@ module Craftwerk.Core.Figure (
   , translate
   , composition
   , style
+  , path
   , line
   , text
 
@@ -32,7 +35,7 @@ module Craftwerk.Core.Figure (
   , point
 
     -- * Path generation
-  , path
+  , lineToPath
   , rectangle
   , unitRectangle
   ) where
@@ -43,7 +46,16 @@ import Data.Monoid
 
 type Point = (Float, Float)
 type Vector = Point
-type Path = [Point]
+
+-- | Path creation
+data Segment = MoveTo Point
+             | LineSegment Point
+             | ArcSegment Point Float Float Float
+             | CurveSegment Point Point Point
+             deriving (Show, Eq)
+               
+type Line = [Point]
+type Path = [Segment]
 
 -- | The main datatype describing an arbitrary figure.
 data Figure = Blank
@@ -51,7 +63,9 @@ data Figure = Blank
             | Canvas Transform Figure
             | Composition [Figure]
             | Style StyleProperties Figure
-            | Line Path
+            | Path Path
+            | Circle Point Float
+            | Grid Vector Float Float
             | Text String
             deriving (Show, Eq)
 
@@ -87,8 +101,11 @@ composition = Composition
 style :: StyleProperties -> Figure -> Figure
 style = Style
 
-line :: Path -> Figure
-line = Line
+line :: Line -> Figure
+line l = Path (lineToPath l)
+
+path :: Path -> Figure
+path p = Path p
 
 text :: String -> Figure
 text = Text
@@ -96,13 +113,13 @@ text = Text
 point :: Float -> Float -> Point
 point x y = (x,y)
 
-path :: [Point] -> Path
-path = id
+lineToPath :: Line -> Path
+lineToPath (p:ps) = (MoveTo p):(map (\p -> LineSegment p) ps)
 
 -- | Construct a rectangle path from origin and extent.
-rectangle :: Point -> Vector -> Path
+rectangle :: Point -> Vector -> Line
 rectangle (x,y) (w,h) = [(x,y),(x+w,y),(x+w,y+h),(x,y+h)]
 
 -- | Rectangle with origin (0,0) and extent (1,1)
-unitRectangle :: Path
+unitRectangle :: Line
 unitRectangle = rectangle (0,0) (1,1)

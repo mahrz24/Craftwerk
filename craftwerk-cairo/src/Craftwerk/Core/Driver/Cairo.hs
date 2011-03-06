@@ -16,6 +16,8 @@ import Craftwerk.Core.Figure
 import Craftwerk.Core.Color
 import Craftwerk.Core.Style
 
+import Craftwerk.Core.Driver.Generic
+
 import qualified Graphics.Rendering.Cairo as Cairo
 import Graphics.Rendering.Cairo (Matrix)
 import qualified Graphics.Rendering.Cairo.Matrix as Matrix
@@ -59,7 +61,7 @@ figureToRenderContextWithStyle (Canvas t a) =
 figureToRenderContextWithStyle (Composition a) =
   mapM_ figureToRenderContextWithStyle a
 
-figureToRenderContextWithStyle (Line a) = ask >>= \c -> lift $ do
+figureToRenderContextWithStyle (Path a) = ask >>= \c -> lift $ do
   let sp = getProperty $ styleP c
   when (sp fill ) (do cairoSetColor (sp fillColor)
                       cairoPath a sp
@@ -76,9 +78,11 @@ figureToRenderContextWithStyle (Line a) = ask >>= \c -> lift $ do
                        Cairo.setMatrix (strokeMatrix c)
                        Cairo.stroke
                        Cairo.restore)
-
-
+    
 figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill
+
+figureToRenderContextWithStyle other = 
+  figureToRenderContextWithStyle (genericFigure other)
 
 -- Helper functions
 
@@ -104,9 +108,27 @@ cairoSetLineCap lc =
                        CapButt ->  Cairo.LineCapButt
                        CapRound ->  Cairo.LineCapRound)
 
-cairoPath a sp = do (fnC Cairo.moveTo) (head a)
-                    sequence_ (map (fnC Cairo.lineTo) a)
+cairoPath a sp = do sequence_ (map cairoSegment a) 
                     when (sp closePath) (Cairo.closePath)
+                    
+cairoSegment (MoveTo p) = (fnC Cairo.moveTo) p
+cairoSegment (LineSegment p) = (fnC Cairo.lineTo) p
+cairoSegment (ArcSegment (x,y) sa ea r) = 
+  if sa > ea then
+    Cairo.arcNegative (float2Double $ x-r*cos(radians sa)) (float2Double $ y-r*sin(radians sa)) 
+    (float2Double r) (radians $ float2Double (sa)) (radians $ float2Double (ea))
+  else
+    Cairo.arc (float2Double $ x-r*cos(radians sa)) (float2Double $ y-r*sin(radians sa)) 
+    (float2Double r) (radians $ float2Double (sa)) (radians $ float2Double (ea))
+cairoSegment (CurveSegment (px,py) (c1x,c1y) (c2x,c2y)) = 
+  Cairo.curveTo 
+  (float2Double c1x) 
+  (float2Double c1y) 
+  (float2Double c2x) 
+  (float2Double c2y) 
+  (float2Double px) 
+  (float2Double py) 
+  
                     
 radians :: (Floating a) => a -> a
 radians n = n / (360 / (2 * pi))
