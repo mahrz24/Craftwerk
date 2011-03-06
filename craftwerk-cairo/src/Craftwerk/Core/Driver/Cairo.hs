@@ -27,7 +27,7 @@ import Control.Monad.Reader
 
 data Context = Context { styleP :: StyleProperties
                        , strokeMatrix :: Matrix
-                       , generic :: Bool
+                       , noDecorations :: Bool
                        }
 
 type Render a = ReaderT Context Cairo.Render a
@@ -39,7 +39,7 @@ figureToRenderContext f = do
   runReaderT (figureToRenderContextWithStyle f) $
     Context { styleP = defaultStyle
             , strokeMatrix = strokeMatrix
-            , generic = False
+            , noDecorations = False
             }
 
 figureToRenderContextWithStyle Blank = return ()
@@ -63,8 +63,8 @@ figureToRenderContextWithStyle (Canvas t a) =
 figureToRenderContextWithStyle (Composition a) =
   mapM_ figureToRenderContextWithStyle a
 
-figureToRenderContextWithStyle (Generic a) = 
-  local (\c -> c { generic = True
+figureToRenderContextWithStyle (NoDecorations a) = 
+  local (\c -> c { noDecorations = True
                  }) $ (figureToRenderContextWithStyle a)
 
 figureToRenderContextWithStyle (Path a) = ask >>= \c -> 
@@ -89,7 +89,7 @@ figureToRenderContextWithStyle (Path a) = ask >>= \c ->
                         Cairo.stroke 
                         Cairo.restore)
         -- Avoid running into a deadlock when rendering arrow tips
-        when (not $ generic c) $ figureToRenderContextWithStyle $ (arrowTipsForPath a (sp lineWidth) (sp arrowTips))
+        when (not $ noDecorations c) $ figureToRenderContextWithStyle $ (arrowTipsForPath a (sp lineWidth) (sp arrowTips))
   
     
 figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill
@@ -142,10 +142,7 @@ cairoSegment (CurveSegment (px,py) (c1x,c1y) (c2x,c2y)) =
   (float2Double px) 
   (float2Double py) 
   
-                    
-radians :: (Floating a) => a -> a
-radians n = n / (360 / (2 * pi))
-
+  
 transformationMatrix t m = case t of
   Rotate r    -> 
     Matrix.rotate (radians $ float2Double r) m

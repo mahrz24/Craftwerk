@@ -19,8 +19,10 @@ main = do displayRender renderFigure
                        , style newStyle { clip = yes } $ Circle (5,5) 5
                        , style newStyle { closePath = no, fill=no, arrowTips = arrow (<=>) } 
                          $ path [MoveTo (3,2),  CurveSegment (4,4) (1,5) (5,1)]
-                       , style newStyle { closePath = no, fill=no, arrowTips = arrow (<==) } 
-                         $ path [MoveTo (3,5),  LineSegment (6,6)]
+                       , style newStyle { closePath = no, fill=no, arrowTips = arrow (<=>) } 
+                         $ path [MoveTo (3,5),  LineSegment (4,5), LineSegment (4.5,6)]
+                       , style newStyle { closePath = no, fill=no, lineWidth = Just 1,  arrowTips = arrow (<=>) } 
+                         $ path [MoveTo (1,5),  LineSegment (2,5), LineSegment (2.5,6)]
                        , path [MoveTo (6,2),  ArcSegment (6,2) 160 45 2]
                        , path [MoveTo (6,2),  ArcSegment (6,2) 45 160 2]
                        , Circle (0,0) 1

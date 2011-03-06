@@ -223,6 +223,7 @@ segmentToString (MoveTo p) =
 segmentToString (LineSegment p) = 
   " -- " ++ (pointToString p)
 segmentToString (ArcSegment p sa ea r) = 
+  -- This needs to be fixed, the point is only connected when there is a current point
   " -- " ++ (pointToString p) ++ " arc " ++ (printf "(%f:%f:%fcm)" sa ea r)
 segmentToString (CurveSegment p c1 c2) =
   " .. controls " ++ (pointToString c1) ++ "and " 
