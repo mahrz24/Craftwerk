@@ -2,6 +2,8 @@ module Main where
 
 import Craftwerk.Core
 
+
+
 main = let w = 10
            h = 10
        in do putStrLn . figureToTikzPicture

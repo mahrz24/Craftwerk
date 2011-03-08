@@ -96,7 +96,7 @@ renderWindow :: [(String, Option)] -> [(String, RenderContext)] -> IO Window
 renderWindow opt ctxs = do  
   let rcs = Map.fromList ctxs
   window <- windowNew
-  set window [windowTitle := "Menus and Toolbars",
+  set window [windowTitle := "Render View",
               windowDefaultWidth := 420, windowDefaultHeight := 450]
 
   let firstContext = fst $ head ctxs
@@ -116,7 +116,7 @@ renderWindow opt ctxs = do
 
   expp <- actionNew "EXPP" "Export as PDF..."     (Just "Export as PDF") (Just stockConvert)
   expt <- actionNew "EXPT" "Export as TikZ..."    (Just "Export as TikZ") (Just stockDnd)
-  exia <- actionNew "EXIA" "Exit"    (Just "Exit") (Just stockQuit)   
+  exia <- actionNew "EXIA" "Close"    (Just "Close") (Just stockQuit)   
   zooi <- actionNew "ZOOI" "Zoom in"  (Just "Zoom in") (Just stockZoomIn)
   zooo <- actionNew "ZOOO" "Zoom out"  (Just "Zoom out") (Just stockZoomOut)
   zoof <- actionNew "ZOOF" "Zoom to fit"  (Just "Zoom to fit") (Just stockZoomFit)
