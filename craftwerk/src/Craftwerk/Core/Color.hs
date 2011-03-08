@@ -12,6 +12,8 @@ module Craftwerk.Core.Color (
   -- * Color construction
   , makeColor
   , makeColorFromIntegral
+  , rgb
+  , rgba
 
   -- * Component access
   , getRGB
@@ -39,6 +41,12 @@ makeColor r g b = RGBA (cap r) (cap g) (cap b) 1.0
 makeColorFromIntegral :: (Integral a) => a -> a -> a -> Color
 makeColorFromIntegral r g b = RGBA (convert r) (convert g) (convert b) 1.0
   where convert k = cap $ (fromIntegral k) / 100.0
+
+-- | Alias for 'Just $ makeColor'
+rgb r g b = Just $ makeColor r g b
+
+-- | Alias for 'Just $ makeColorWithAlpha'
+rgba r g b a = Just $ makeColorWithAlpha r g b a
 
 -- | Create a color from red, green, blue and alpha value.
 -- Color values are capped.

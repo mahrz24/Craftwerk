@@ -23,6 +23,7 @@ Library
   Build-Depends:    base >= 3 && < 5,
                     cairo >= 0.11,
                     gtk >= 0.11,
+                    containers,
                     craftwerk-cairo,
                     craftwerk
   Exposed-Modules:  Craftwerk.UI,
@@ -34,7 +35,8 @@ Executable example1
     Build-Depends:        base >= 3 && < 5,
                           craftwerk,
                           craftwerk-cairo,
-                          craftwerk-gtk
+                          craftwerk-gtk,
+                          containers
   Main-Is:              Example1.hs
   if !flag(examples)
     Buildable:          False

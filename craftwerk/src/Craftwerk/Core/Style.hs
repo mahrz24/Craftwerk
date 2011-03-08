@@ -16,10 +16,22 @@ module Craftwerk.Core.Style (
   , emptyStyle
   , newStyle
   , defaultStyle
+  , setLineWidth
+  , fillOnly
+  , strokeOnly
 
   -- * Property values
   , yes
   , no
+  , width
+  , verythin
+  , thin
+  , semithick
+  , thick
+  , verythick
+  , ultrathick
+  , limit
+  , phase
 
   -- * Property access and merging
   , getProperty
@@ -103,6 +115,15 @@ defaultStyle =
                   , arrowTips = Just (TipNone, TipNone)
                   }
 
+setLineWidth :: (Maybe Float) -> StyleProperties
+setLineWidth a = newStyle { lineWidth = a }
+
+fillOnly :: StyleProperties
+fillOnly = newStyle { fill = yes, stroke = no }
+
+strokeOnly :: StyleProperties
+strokeOnly = newStyle { fill = no, stroke = yes}
+
 -- | Alias for 'Just True' to make style specification more convenient.
 yes :: Maybe Bool
 yes = Just True
@@ -110,6 +131,19 @@ yes = Just True
 -- | Alias for 'Just False' to make style specification more convenient.
 no :: Maybe Bool
 no = Just False
+
+width :: Float -> Maybe Float
+width w = Just w
+
+verythin = width 0.2
+thin = width 0.4
+semithick = width 0.6
+thick = width 0.8
+verythick = width 1.2
+ultrathick = width 1.6
+
+limit = width
+phase = width
 
 -- | Read a property from a style property record returning the value of
 -- the default style if the value is 'Nothing'.

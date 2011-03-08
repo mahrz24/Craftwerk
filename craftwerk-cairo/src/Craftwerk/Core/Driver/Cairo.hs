@@ -89,7 +89,8 @@ figureToRenderContextWithStyle (Path a) = ask >>= \c ->
                         Cairo.stroke 
                         Cairo.restore)
         -- Avoid running into a deadlock when rendering arrow tips
-        when (not $ noDecorations c) $ figureToRenderContextWithStyle $ (arrowTipsForPath a (sp lineWidth) (sp arrowTips))
+        when (not $ noDecorations c) 
+          (do (figureToRenderContextWithStyle $ (arrowTipsForPath a (sp lineWidth) (sp arrowTips))))
   
     
 figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill

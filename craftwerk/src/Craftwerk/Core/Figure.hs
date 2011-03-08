@@ -28,7 +28,13 @@ module Craftwerk.Core.Figure (
   , composition
   , style
   , path
+  , moveTo
+  , lineTo
+  , arc
+  , curveTo
   , line
+  , circle
+  , grid
   , text
 
     -- * Point generation
@@ -105,8 +111,26 @@ style = Style
 line :: Line -> Figure
 line l = Path (lineToPath l)
 
+moveTo :: Point -> Segment
+moveTo = MoveTo
+
+lineTo :: Point -> Segment
+lineTo = LineSegment
+
+arc :: Point -> Float -> Float -> Float -> Segment
+arc = ArcSegment
+
+curveTo :: Point -> Point -> Point -> Segment
+curveTo = CurveSegment
+
 path :: Path -> Figure
 path p = Path p
+
+circle :: Point -> Float -> Figure
+circle = Circle
+
+grid :: Vector -> Vector -> Figure
+grid v (x,y) = Grid v x y
 
 text :: String -> Figure
 text = Text
