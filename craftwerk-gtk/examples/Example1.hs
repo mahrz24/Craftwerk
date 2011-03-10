@@ -13,7 +13,7 @@ main = do displayMultiple ([ ("Test", NumberOption 1)
                            , ("Choice", ChoiceOption ["Hallo", 
                                                       "World"] 0)]) 
             $
-            [ ("First", renderFigure 10 10 (\opt ->
+            [ ("First", renderFigure 10 10 (\opt -> return $
                         style newStyle { closePath = no
                                          , fillColor = rgb 0.4 0.2 0.8
                                          , stroke = yes }
@@ -33,7 +33,7 @@ main = do displayMultiple ([ ("Test", NumberOption 1)
                           , style (setLineWidth thick) $ line [(1,4),(9,4)]
                           ]
                         ]))
-            , ("Second", renderFigure 10 10 (\opt ->
+            , ("Second", renderFigure 10 10 (\opt -> return $
                          style newStyle { lineWidth = Just (value $ opt Map.! "Test 1")
                                           , closePath =  Just (isSet $ opt Map.! "Test 2")
                                           , fillColor = Just $ makeColor 0.4 0.2 (fromIntegral $ choice $ opt Map.! "Choice")

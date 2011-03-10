@@ -31,6 +31,7 @@ import qualified Data.Map as Map
 import Data.List
 
 import Control.Monad
+import Control.Monad.Trans
 
 import Text.Printf
 
@@ -60,16 +61,17 @@ isSet (BoolOption b) = b
 isSet _ = False
 
 data RenderContext = 
-  RenderContext { cairo :: (Map.Map String Option -> Float -> Float -> Cairo.Render()) 
-                , tikz :: (Map.Map String Option -> String) }
+  RenderContext { cairo :: (Map.Map String Option -> Float -> Float -> IO (Cairo.Render())) 
+                , tikz :: (Map.Map String Option -> IO String) }
   
 renderFigure :: Float -> 
                 Float -> 
-                (Map.Map String Option -> Figure) -> 
+                (Map.Map String Option -> IO Figure) -> 
                 RenderContext
-renderFigure w h f  = 
-  RenderContext r (figureToTikzPicture . f)
-  where r op wx hx = figureToRenderContext $ scale (wx/w, -hx/h) $ translate (0,-h) $ (f op)
+renderFigure w h f  = do
+  RenderContext r ((liftM figureToTikzPicture) . f)
+  where r op wx hx = liftM (s wx hx) (f op)
+        s wx hx = (figureToRenderContext . scale (wx/w, -hx/h) . translate (0,-h))
   
 -- | Display a render context in a Gtk window, starts the Gtk main loop. 
 -- The first argument gets the size of the window passed.
@@ -174,7 +176,7 @@ renderWindow opt ctxs = do
   label <- labelNew (Just $ firstContext)
   boxPackStart sidebox label PackNatural 10
 
-  boxPackStart sidebox opt PackNatural 10
+  boxPackStart sidebox opt PackGrow 10
   
   
   -- The display widgets
@@ -208,6 +210,7 @@ renderWindow opt ctxs = do
                        drawin <- widgetGetDrawWindow canvas
                        state <- readIORef stateRef
                        let f = cairo (rcs Map.! (currentContext state))
+                       fig <- f (curOptions state) (fromIntegral w)  (fromIntegral h)
                        renderWithDrawable drawin 
                          (do Cairo.setSourceRGB 1.0 1.0 1.0
                              let dw = (fromIntegral w)
@@ -218,7 +221,7 @@ renderWindow opt ctxs = do
                              Cairo.lineTo dh 0
                              Cairo.closePath
                              Cairo.fill
-                             f (curOptions state) (fromIntegral w)  (fromIntegral h))
+                             fig)
                        return True)
     
   -- Menu event actions
@@ -258,10 +261,11 @@ renderWindow opt ctxs = do
                                     Just path -> 
                                       do state <- readIORef stateRef
                                          let f = cairo (rcs Map.! (currentContext state))
+                                         fig <- f (curOptions state) 500 500 
                                          (Cairo.withPDFSurface path 
                                           (realToFrac 500) 
                                           (realToFrac 500) 
-                                          (\s -> Cairo.renderWith s (f (curOptions state) 500 500)))
+                                          (\s -> Cairo.renderWith s fig))
           ResponseDeleteEvent -> return ()
         widgetDestroy fchdal)
   
@@ -281,7 +285,8 @@ renderWindow opt ctxs = do
                                     Just path -> 
                                       do state <- readIORef stateRef
                                          let t = tikz (rcs Map.! (currentContext state)) 
-                                         writeFile path (t (curOptions state))
+                                         fig <- (t (curOptions state))
+                                         writeFile path fig
           ResponseDeleteEvent -> return ()
         widgetDestroy fchdal)
     
@@ -334,9 +339,12 @@ optionToUI canvas opt stateRef = do
 createOption :: DrawingArea -> IORef (State) -> VBox -> (String,Option) -> IO ()
 createOption canvas stateRef box (lbl, opt) = 
   do hbox <- hBoxNew False 0 
-     boxPackStart box hbox PackNatural 5
-     label <- labelNew (Just lbl)
-     boxPackStart hbox label PackNatural 10
+     
+     case opt of 
+       ChoiceOption _ _ -> boxPackStart box hbox PackGrow 5
+       _ -> do boxPackStart box hbox PackNatural 5
+               label <- labelNew (Just lbl)
+               boxPackStart hbox label PackNatural 10
      case opt of
        NumberOption def -> 
          do field <- entryNew
@@ -356,8 +364,8 @@ createOption canvas stateRef box (lbl, opt) =
             return ()
        RangeOption min max step def ->
          do adj <- adjustmentNew (float2Double $ def) (float2Double $ min)
-                   (float2Double $ max) (float2Double $ step) 1.0 0.0
-            scl <- hScaleNew adj
+                   (float2Double $ max) (float2Double $ step) (float2Double $ step*10) 0.0
+            scl <- spinButtonNew adj 0.5 4
             boxPackStart hbox scl PackGrow 10
             onValueChanged adj (
               do state <- readIORef stateRef 
@@ -388,13 +396,35 @@ createOption canvas stateRef box (lbl, opt) =
                  return ())
             return ()
        ChoiceOption choices def ->
-         do cb <- comboBoxNewText
-            mapM_ (comboBoxAppendText cb) choices
-            comboBoxSetActive cb def
-            boxPackStart hbox cb PackGrow 10
-            on cb changed (
-              do state <- readIORef stateRef 
-                 val <- comboBoxGetActive cb
+         do list <- listStoreNew choices
+            treeview <- treeViewNewWithModel list
+            
+            tvc <- treeViewColumnNew
+            treeViewColumnSetTitle tvc lbl
+ 
+            renderer <- cellRendererTextNew
+            cellLayoutPackStart tvc renderer False
+            cellLayoutSetAttributes tvc renderer list 
+              (\ind -> [cellText := ind])
+            treeViewAppendColumn treeview tvc
+           
+            tree <- treeViewGetSelection treeview  
+            treeSelectionSetMode tree SelectionSingle
+            treeSelectionSelectPath tree [0]
+            
+            scrwin <- scrolledWindowNew Nothing Nothing
+            scrolledWindowSetPolicy scrwin PolicyNever PolicyAutomatic
+            containerAdd scrwin treeview
+            
+            frame <- frameNew
+            containerAdd frame scrwin
+            
+            boxPackStart hbox frame PackGrow 10
+            
+            onSelectionChanged tree (
+              do sel <- treeSelectionGetSelectedRows tree
+                 state <- readIORef stateRef 
+                 let val = head $ head sel
                  let c = [] --choices $ (curOptions state) Map.! lbl
                  writeIORef stateRef 
                    (state { curOptions = 
@@ -403,8 +433,12 @@ createOption canvas stateRef box (lbl, opt) =
                                (curOptions state)
                           })
                  widgetQueueDraw canvas
-                 return ())
+                 return ()
+              )
+            
+
             return ()
+            
      sep     <- hSeparatorNew
      boxPackStart box sep PackNatural 0
  
