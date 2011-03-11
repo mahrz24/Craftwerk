@@ -178,7 +178,6 @@ renderWindow opt ctxs = do
 
   boxPackStart sidebox opt PackGrow 10
   
-  
   -- The display widgets
   scrwin <- scrolledWindowNew Nothing Nothing
   scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic
