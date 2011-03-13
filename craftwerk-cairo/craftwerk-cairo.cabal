@@ -5,18 +5,32 @@ License-file:	     LICENSE
 Author:              Malte Harder <malte.harder@gmail.com>
 Maintainer:          Malte Harder <malte.harder@gmail.com>
 Category:	     Graphics
-Synopsis:	     Cairo backend for the 2D graphics library Craftwerk.
+Synopsis:            Cairo backend for Craftwerk.
+Description:	     Cairo backend for Craftwerk, a high-level and easy to use graphics library
+                     with integrated TikZ output.
+                     .                     		     
+		     Craftwerk is a high-level 2D vector graphics library for output of
+		     TikZ pictures that can be typeset using (pdf)LaTeX. The TikZ library
+		     and documentation can be found at: <http://sourceforge.net/projects/pgf>.
+		     .			  
+		     Craftwerk tries to encapsulate the graphics backend such that figures
+		     can also be rendered with a Cairo backend and quickly displayed in a
+		     Gtk window. The aim is to support TikZ and Cairo seamlessly as
+		     possible, meaning that graphics produced with either backend should
+		     look as similar as possible. Other backends are easily written and the
+		     aim is to provide generic fallback functions for features that are not
+		     natively supported by some backend.
 
-Stability:	     unstable
+Stability:	     experimental
 Build-Type:          Simple
 Cabal-Version:       >=1.8
 
 Extra-Source-Files:  LICENSE
 
 Library
-  Hs-Source-Dirs:   src
-  Build-Depends:    base >= 3 && < 5,
-                    mtl >= 1.1 && < 2.1,
-                    cairo >= 0.11,
-                    craftwerk
-  Exposed-Modules:  Craftwerk.Core.Driver.Cairo
+  Hs-Source-Dirs:    src
+  Build-Depends:     base >= 3 && < 5,
+                     mtl >= 1.1,
+                     cairo >= 0.11,
+                     craftwerk
+  Exposed-Modules:   Graphics.Craftwerk.Core.Driver.Cairo

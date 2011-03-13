@@ -5,7 +5,21 @@ License-file:	     LICENSE
 Author:              Malte Harder <malte.harder@gmail.com>
 Maintainer:          Malte Harder <malte.harder@gmail.com>
 Category:	     Graphics
-Synopsis:	     Gtk frontend for the 2D graphics library Craftwerk.
+Synopsis:            Gtk UI for Craftwerk.
+Description:	     Gtk UI functions for Craftwerk, a high-level and easy to use graphics library
+                     with integrated TikZ output.
+                     .
+		     Craftwerk is a high-level 2D vector graphics library for output of
+		     TikZ pictures that can be typeset using (pdf)LaTeX. The TikZ library
+		     and documentation can be found at: <http://sourceforge.net/projects/pgf>.
+                     .
+		     Craftwerk tries to encapsulate the graphics backend such that figures
+		     can also be rendered with a Cairo backend and quickly displayed in a
+		     Gtk window. The aim is to support TikZ and Cairo seamlessly as
+		     possible, meaning that graphics produced with either backend should
+		     look as similar as possible. Other backends are easily written and the
+		     aim is to provide generic fallback functions for features that are not
+		     natively supported by some backend.
 
 Stability:	     unstable
 Build-Type:          Simple
@@ -15,30 +29,30 @@ Extra-Source-Files:  LICENSE,
 		     examples/Example1.hs
 
 Flag examples
-  Description:      Build the examples
-  Default:          False
+  Description:       Build the examples
+  Default:           False
 
 Library
-  Hs-Source-Dirs:   src
-  Build-Depends:    base >= 3 && < 5,
-                    cairo >= 0.11,
-                    gtk >= 0.11,
-                    containers,
-                    craftwerk-cairo,
-                    craftwerk,
-                    mtl
-  Exposed-Modules:  Craftwerk.UI,
-                    Craftwerk.UI.Gtk
+  Hs-Source-Dirs:    src
+  Build-Depends:     base >= 3 && < 5,
+                     cairo >= 0.11,
+                     gtk >= 0.11,
+                     containers,
+                     craftwerk-cairo,
+                     craftwerk,
+                     mtl
+  Exposed-Modules:   Graphics.Craftwerk.UI,
+                     Graphics.Craftwerk.UI.Gtk
 
 Executable example1
-  Hs-Source-Dirs:       examples
+  Hs-Source-Dirs:    examples
   if flag(examples)
-    Build-Depends:        base >= 3 && < 5,
-                          craftwerk,
-                          craftwerk-cairo,
-                          craftwerk-gtk,
-                          containers
-  Main-Is:              Example1.hs
+    Build-Depends:   base >= 3 && < 5,
+                     craftwerk,
+                     craftwerk-cairo,
+                     craftwerk-gtk,
+                     containers
+  Main-Is:           Example1.hs
   if !flag(examples)
-    Buildable:          False
+    Buildable:       False
 

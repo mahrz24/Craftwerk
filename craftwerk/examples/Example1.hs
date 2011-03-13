@@ -1,6 +1,6 @@
 module Main where
 
-import Craftwerk.Core
+import Graphics.Craftwerk.Core
 
 
 

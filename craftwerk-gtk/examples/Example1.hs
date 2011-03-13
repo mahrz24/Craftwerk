@@ -1,8 +1,8 @@
 module Main where
 
-import Craftwerk.Core
-import Craftwerk.UI
-import Craftwerk.Core.Driver.Cairo
+import Graphics.Craftwerk.Core
+import Graphics.Craftwerk.UI
+import Graphics.Craftwerk.Core.Driver.Cairo
 
 import qualified Data.Map as Map
 

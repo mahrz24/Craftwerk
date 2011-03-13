@@ -1,62 +1,53 @@
-Name:                craftwerk
-Version:             0.1
-License:	     MIT
-License-file:	     LICENSE
-Author:              Malte Harder <malte.harder@gmail.com>
-Maintainer:          Malte Harder <malte.harder@gmail.com>
-Category:	     Graphics
-Synopsis:	     2D graphics library with TikZ and Cairo output
-Description:
-                     A high-level and easy to use graphics library
-		     with several backends, currently including
-		     Cairo(+Gtk UI), Gloss and TikZ.
-		     .
-		     Craftwerk is a high-level 2D vector graphics
-		     library for output of TikZ pictures that can be
-		     typeset using (pdf)LaTeX. The library tries to
-		     encapsulate the graphics backend such that
-		     figures can also be rendered with a Cairo backend
-		     and quickly displayed in a Gtk window. The aim is
-		     to support TikZ and Cairo seamlessly as possible,
-		     meaning that graphics produced with either
-		     backend should look as similar as possible. Other
-		     backends like Gloss and Haha do not claim to
-		     produce visually similar pictures to TikZ or
-		     Cairo or even to support all
-		     features. Nonetheless, any Craftwerk 'Figure' can
-		     be rendered with every backend. Please refer to
-		     the documentation page of the specific backend
-		     driver for a description of the supported
-		     features (unsupported features might be ignored).
-		     .
-		     Graphics are generated using a simple data type
-		     and can be rendered with one of the available
-		     backends.
+Name:                   craftwerk
+Version:                0.1
+License:	        MIT
+License-file:	        LICENSE
+Author:                 Malte Harder <malte.harder@gmail.com>
+Maintainer:             Malte Harder <malte.harder@gmail.com>
+Category:	        Graphics
+Synopsis:	        2D graphics library with integrated TikZ output.
+Description:            A high-level and easy to use graphics library
+                        with integrated TikZ output.
+                        .
+                        Craftwerk is a high-level 2D vector graphics library for output of
+                        TikZ pictures that can be typeset using (pdf)LaTeX. The TikZ library
+                        and documentation can be found at: <http://sourceforge.net/projects/pgf>.
+                        .
+                        Craftwerk tries to encapsulate the graphics backend such that figures
+                        can also be rendered with a Cairo backend and quickly displayed in a
+                        Gtk window. The aim is to support TikZ and Cairo seamlessly as
+                        possible, meaning that graphics produced with either backend should
+                        look as similar as possible. Other backends are easily written and the
+                        aim is to provide generic fallback functions for features that are not
+                        natively supported by some backend.
+                        .
+                        Thanks to Jannis Harder for some contributions and ideas to the 
+                        library.
 
-Stability:	     unstable
-Build-Type:          Custom
-Cabal-Version:       >=1.8
+Stability:	        experimental
+Build-Type:             Custom
+Cabal-Version:          >=1.8
 
-Extra-Source-Files:  LICENSE,
- 		     README,
-		     examples/Example1.hs
+Extra-Source-Files:     LICENSE,
+ 		        README,
+		        examples/Example1.hs
 Flag tests
-  Description:      Build the tests
-  Default:          False
+  Description:          Build the tests
+  Default:              False
 
 Flag examples
-  Description:      Build the examples
-  Default:          False
+  Description:          Build the examples
+  Default:              False
 
 Library
-  Hs-Source-Dirs:   src
-  Build-Depends:    base >= 3 && < 5, monads-fd, vector-space, colour
-  Exposed-Modules:  Craftwerk.Core,
-                    Craftwerk.Core.Color,
-                    Craftwerk.Core.Style,
-                    Craftwerk.Core.Figure,
-                    Craftwerk.Core.Driver.Tikz,
-                    Craftwerk.Core.Driver.Generic
+  Hs-Source-Dirs:       src
+  Build-Depends:        base >= 3 && < 5, mtl, vector-space, colour
+  Exposed-Modules:      Graphics.Craftwerk.Core,
+                        Graphics.Craftwerk.Core.Color,
+                        Graphics.Craftwerk.Core.Style,
+                        Graphics.Craftwerk.Core.Figure,
+                        Graphics.Craftwerk.Core.Driver.Tikz,
+                        Graphics.Craftwerk.Core.Driver.Generic
 
 Executable example1
   Hs-Source-Dirs:       examples
@@ -68,18 +59,18 @@ Executable example1
 
 
 Executable test-craftwerk
-  Hs-Source-Dirs:        test
-  Main-Is:		 Test.hs
-  Other-Modules:         Craftwerk.Core.Test
+  Hs-Source-Dirs:       test
+  Main-Is:		Test.hs
+  Other-Modules:        Graphics.Craftwerk.Core.Test
   if !flag(tests)
-    Buildable:	         False
+    Buildable:	        False
   else
-    Build-Depends:     base >= 3 && < 5,
-                       craftwerk,
-                       test-framework,
-                       test-framework-th,
-                       test-framework-hunit,
-                       test-framework-quickcheck2,
-                       QuickCheck,
-                       HUnit
+    Build-Depends:      base >= 3 && < 5,
+                        craftwerk,
+                        test-framework,
+                        test-framework-th,
+                        test-framework-hunit,
+                        test-framework-quickcheck2,
+                        QuickCheck,
+                        HUnit
 
