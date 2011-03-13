@@ -119,7 +119,7 @@ defaultStyle =
                   , arrowTips = Just (TipNone, TipNone)
                   }
 
-setLineWidth :: (Maybe Double) -> StyleProperties
+setLineWidth :: Maybe Double -> StyleProperties
 setLineWidth a = newStyle { lineWidth = a }
 
 fillOnly :: StyleProperties
@@ -142,7 +142,7 @@ rgb r g b = Just $ sRGB r g b
 
 -- | Alias for 'Just'
 width :: Double -> Maybe Double
-width w = Just w
+width = Just
 
 -- | Width 0.2.
 verythin ::  Maybe Double
@@ -185,8 +185,8 @@ mergeProperty :: StyleProperties ->
                  StyleProperties ->
                  (StyleProperties -> Maybe a) ->
                  Maybe a
-mergeProperty s t f = case (f t) of
-  Nothing -> (f s)
+mergeProperty s t f = case f t of
+  Nothing -> f s
   x -> x
 
 -- | Merge two property records, where the second argument overwrites fields of

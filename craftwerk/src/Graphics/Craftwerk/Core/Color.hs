@@ -23,7 +23,7 @@ type FigureColor = Colour Double
 
 -- | Returns the i-th of 16 basic named colours (i % 16 to be precise).
 integralColor :: Integral a => a -> FigureColor
-integralColor i = (concat (repeat stdColors)) !! fromIntegral i
+integralColor i = concat (repeat stdColors) !! fromIntegral i
 
 stdColors = [ white
             , silver

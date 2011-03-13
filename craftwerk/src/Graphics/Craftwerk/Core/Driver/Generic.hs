@@ -29,8 +29,8 @@ genericFigure (Circle (x,y) r) =
 
 genericFigure (Grid (x,y) xs ys) =
   composition $
-  [line [(0,(fromIntegral i)*ys),(x,(fromIntegral i)*ys)] | i <- [0 .. floor (y/ys)]] ++
-  [line [((fromIntegral i)*xs,0),((fromIntegral i)*xs,y)] | i <- [0 .. floor (x/xs)]]
+  [line [(0,fromIntegral i * ys),(x,fromIntegral i * ys)] | i <- [0 .. floor (y/ys)]] ++
+  [line [(fromIntegral i *xs,0),(fromIntegral i * xs,y)] | i <- [0 .. floor (x/xs)]]
 
 -- Avoid exceptions
 genericFigure _ = Blank
@@ -39,10 +39,10 @@ genericFigure _ = Blank
 arrowTipsForPath :: [Segment] -> Double -> (ArrowTip, ArrowTip) -> Figure
 arrowTipsForPath p lw at =
   NoDecorations $ composition $ foldr (tipForSegment lw at) []
-  (adjacent $ (MoveTo (0,0)):p ++ [(MoveTo (0,0))])
+  (adjacent $ MoveTo (0,0):p ++ [MoveTo (0,0)])
 
 tipForSegment lw (l,r) (s1,s2,s3) ats =
-  ats ++ (leftTipForSegment lw l s1 s2) ++ (rightTipForSegment lw r s1 s2 s3)
+  ats ++ leftTipForSegment lw l s1 s2 ++ rightTipForSegment lw r s1 s2 s3
 
 leftTipForSegment _ _ (MoveTo _) (MoveTo _) = []
 leftTipForSegment lw l s1@(MoveTo p) s2 = arrowTipForTangent lw l (leftTangent s1 s2)
@@ -80,7 +80,7 @@ arrowTipForTangent lw TipDefault t =
 
 
 arrowTip (Tangent p (x,y)) f =
-  [translate (p) $ rotate ((degree $ atan2 y x)) $ f]
+  [translate p $ rotate (degree $ atan2 y x) f]
 
 adjacent :: [a] -> [(a,a,a)]
 adjacent xs = zipWith3 triple xs (tail xs) (tail $ tail xs)

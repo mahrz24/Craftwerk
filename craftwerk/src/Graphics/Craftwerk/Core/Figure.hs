@@ -144,7 +144,7 @@ curveTo = CurveSegment
 
 -- | Generate a figure from a path.
 path :: Path -> Figure
-path p = Path p
+path = Path
 
 -- | Generate a circle figure at a point with given radius.
 circle :: Point -> Double -> Figure
@@ -164,7 +164,7 @@ point :: Double -> Double -> Point
 point x y = (x,y)
 
 lineToPath :: Line -> Path
-lineToPath (p:ps) = (MoveTo p):(map (\p -> LineSegment p) ps)
+lineToPath (p:ps) = MoveTo p:map LineSegment ps
 
 -- | Construct a rectangle path from origin and extent.
 rectangle :: Point -- ^ Origin

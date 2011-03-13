@@ -51,7 +51,7 @@ data State = State { zoomFactor :: Double
 -- | Describing options for a user interface.
 data Option = NumberOption Double
               -- | A range: min, max, step and initial value.
-            | RangeOption Double Double Double Double 
+            | RangeOption Double Double Double Double
             | BoolOption Bool
               -- | An option of choices with a default selection.
             | ChoiceOption [String] Int
@@ -71,18 +71,17 @@ isSet _ = False
 
 -- | Combined cairo and tikz rendering functions depending on the options.
 data RenderContext =
-  RenderContext { cairo :: (Map.Map String Option -> Double -> Double -> IO (Cairo.Render()))
-                , tikz :: (Map.Map String Option -> IO String) }
+  RenderContext { cairo :: Map.Map String Option -> Double -> Double -> IO (Cairo.Render())
+                , tikz :: Map.Map String Option -> IO String}
 
 -- | Renders an 'IO Figure' into a render context with the given dimensions.
 renderFigure :: Double -- ^ Width of the coordinate system of the GTK widget
                 -> Double -- ^ Height of the coordinate system of the GTK widget
                 -> (Map.Map String Option -> IO Figure) -- ^ The render function
                 -> RenderContext
-renderFigure w h f  = do
-  RenderContext r ((liftM figureToTikzPicture) . f)
+renderFigure w h f  = RenderContext r (liftM figureToTikzPicture . f)
   where r op wx hx = liftM (s wx hx) (f op)
-        s wx hx = (figureToRenderContext . scale (wx/w, -hx/h) . translate (0,-h))
+        s wx hx = figureToRenderContext . scale (wx/w, -hx/h) . translate (0,-h)
 
 -- | Display a render context in a Gtk window, starts the Gtk main loop.
 -- The first argument contains a list of named options whose UI values
@@ -90,7 +89,7 @@ renderFigure w h f  = do
 displayRender :: [(String, Option)] -> RenderContext -> IO ()
 displayRender opt r = do
   initGUI
-  window <- renderWindow opt $ [("Render",r)]
+  window <- renderWindow opt [("Render",r)]
   widgetShowAll window
   onDestroy window mainQuit
   mainGUI
@@ -106,7 +105,7 @@ displayMultiple opt rcs = do
   onDestroy window mainQuit
   mainGUI
 
--- | Same as 'displayMultiple' except that the Gtk main loop is not started or 
+-- | Same as 'displayMultiple' except that the Gtk main loop is not started or
 -- initialized. The window is not visible upon return.
 renderWindow :: [(String, Option)] -> [(String, RenderContext)] -> IO Window
 renderWindow opt ctxs = do
@@ -118,9 +117,9 @@ renderWindow opt ctxs = do
   let firstContext = fst $ head ctxs
 
   -- Initialize the state
-  stateRef <- newIORef (State { zoomFactor = 1.0
-                              , currentContext = firstContext
-                              , curOptions = Map.fromList opt })
+  stateRef <- newIORef State { zoomFactor = 1.0
+                             , currentContext = firstContext
+                             , curOptions = Map.fromList opt }
 
   -- The box layout
   box <- vBoxNew False 0
@@ -152,7 +151,7 @@ renderWindow opt ctxs = do
   actionGroupAddActionWithAccel np next Nothing
   actionGroupAddActionWithAccel np prev Nothing
 
-  when ((length ctxs) <= 1) (actionGroupSetSensitive np False)
+  when (length ctxs <= 1) (actionGroupSetSensitive np False)
 
   ui <- uiManagerNew
   uiManagerAddUiFromString ui uiStd
@@ -187,7 +186,7 @@ renderWindow opt ctxs = do
   -- Create the label and option widgets
   opt <- optionToUI canvas opt stateRef
 
-  label <- labelNew (Just $ firstContext)
+  label <- labelNew (Just firstContext)
   boxPackStart sidebox label PackNatural 10
 
   boxPackStart sidebox opt PackGrow 10
@@ -222,7 +221,7 @@ renderWindow opt ctxs = do
                     do (w,h) <- widgetGetSize canvas
                        drawin <- widgetGetDrawWindow canvas
                        state <- readIORef stateRef
-                       let f = cairo (rcs Map.! (currentContext state))
+                       let f = cairo (rcs Map.! currentContext state)
                        fig <- f (curOptions state) (fromIntegral w)  (fromIntegral h)
                        renderWithDrawable drawin
                          (do Cairo.setSourceRGB 1.0 1.0 1.0
@@ -242,13 +241,13 @@ renderWindow opt ctxs = do
 
   onActionActivate zooi
     (do state <- readIORef stateRef
-        let zf = 2 * (zoomFactor state)
+        let zf = 2 * zoomFactor state
         writeIORef stateRef (state { zoomFactor = zf})
         resizeFrame canvas stateRef)
 
   onActionActivate zooo
     (do state <- readIORef stateRef
-        let zf = 0.5 * (zoomFactor state)
+        let zf = 0.5 * zoomFactor state
         writeIORef stateRef (state { zoomFactor = zf})
         resizeFrame canvas stateRef)
 
@@ -273,12 +272,12 @@ renderWindow opt ctxs = do
                                     Nothing -> return ()
                                     Just path ->
                                       do state <- readIORef stateRef
-                                         let f = cairo (rcs Map.! (currentContext state))
+                                         let f = cairo (rcs Map.! currentContext state)
                                          fig <- f (curOptions state) 500 500
                                          (Cairo.withPDFSurface path
                                           (realToFrac 500)
                                           (realToFrac 500)
-                                          (\s -> Cairo.renderWith s fig))
+                                          (`Cairo.renderWith` fig))
           ResponseDeleteEvent -> return ()
         widgetDestroy fchdal)
 
@@ -297,7 +296,7 @@ renderWindow opt ctxs = do
                                     Nothing -> return ()
                                     Just path ->
                                       do state <- readIORef stateRef
-                                         let t = tikz (rcs Map.! (currentContext state))
+                                         let t = tikz (rcs Map.! currentContext state)
                                          fig <- (t (curOptions state))
                                          writeFile path fig
           ResponseDeleteEvent -> return ()
@@ -310,9 +309,9 @@ renderWindow opt ctxs = do
         writeIORef stateRef
           (state { currentContext = case maybeidx of
                       Nothing -> fst $ head ctxs
-                      Just idx -> if (idx+1) >= (length ctxs) then
+                      Just idx -> if (idx+1) >= length ctxs then
                                     cur
-                                  else (fst $ ctxs !! (idx + 1)) })
+                                  else fst $ ctxs !! (idx + 1) })
         nstate <- readIORef stateRef
         labelSetText label (currentContext nstate)
         widgetQueueDraw canvas)
@@ -326,7 +325,7 @@ renderWindow opt ctxs = do
                       Nothing -> fst $ head ctxs
                       Just idx -> if (idx-1) < 0 then
                                     cur
-                                  else (fst $ ctxs !! (idx - 1)) })
+                                  else fst $ ctxs !! (idx - 1) })
         nstate <- readIORef stateRef
         labelSetText label (currentContext nstate)
         widgetQueueDraw canvas)
@@ -337,7 +336,7 @@ renderWindow opt ctxs = do
              let zf = (zoomFactor state)
              widgetSetSizeRequest canvas (ceiling $ 400*zf) (ceiling $ 400*zf)
 
-optionToUI :: DrawingArea -> [(String,Option)] -> IORef (State) -> IO VBox
+optionToUI :: DrawingArea -> [(String,Option)] -> IORef State -> IO VBox
 optionToUI canvas opt stateRef = do
     box <- vBoxNew False 0
     sep     <- hSeparatorNew
@@ -346,10 +345,10 @@ optionToUI canvas opt stateRef = do
     boxPackStart box label1 PackNatural 5
     sep2     <- hSeparatorNew
     boxPackStart box sep2 PackNatural 0
-    mapM_ (createOption canvas stateRef box) $ opt
+    mapM_ (createOption canvas stateRef box) opt
     return box
 
-createOption :: DrawingArea -> IORef (State) -> VBox -> (String,Option) -> IO ()
+createOption :: DrawingArea -> IORef State -> VBox -> (String,Option) -> IO ()
 createOption canvas stateRef box (lbl, opt) =
   do hbox <- hBoxNew False 0
 
