@@ -83,8 +83,8 @@ figureToTikzPictureWithStyle (Canvas (Translate (x,y)) a) = ask >>= \c ->
   (scope [] .
    (++)
    (coordinateMatrix c ++
-    pgfLowLevel "xshift" (printNum x) ++ "cm" ++
-    pgfLowLevel "yshift" (printNum y) ++ "cm" ++
+    pgfLowLevel "xshift" ((printNum x) ++ "cm") ++
+    pgfLowLevel "yshift" ((printNum y) ++ "cm") ++
     inverseCoordinateMatrix c))
   (figureToTikzPictureWithStyle a)
 
@@ -115,11 +115,11 @@ figureToTikzPictureWithStyle (Transform (Scale (x,y)) a) =
 figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) =
     local (\c -> c { coordinateMatrix = 
                       coordinateMatrix c ++ 
-                      pgfLowLevel "xshift" (printNum x) ++ "cm" ++
-                      pgfLowLevel "yshift" (printNum y) ++ "cm"
+                      pgfLowLevel "xshift" (printNum x ++ "cm") ++
+                      pgfLowLevel "yshift" (printNum y ++ "cm")
                  , inverseCoordinateMatrix =
-                        pgfLowLevel "xshift" (printNum $ -x) ++ "cm" ++
-                        pgfLowLevel "yshift" (printNum $ -y) ++ "cm" ++
+                        pgfLowLevel "xshift" (printNum (-x) ++ "cm") ++
+                        pgfLowLevel "yshift" (printNum (-y) ++ "cm") ++
                         inverseCoordinateMatrix c
                  }) $
   liftM (scope (numArgumentList [("xshift",x,"cm"),("yshift",y,"cm")]))

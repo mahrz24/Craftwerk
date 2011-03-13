@@ -57,6 +57,21 @@ Executable example1
     Build-Depends:      base >= 3 && < 5, craftwerk
   Main-Is:              Example1.hs
 
+Executable example2
+  Hs-Source-Dirs:       examples
+  if !flag(examples)
+    Buildable:          False
+  else
+    Build-Depends:      base >= 3 && < 5, craftwerk
+  Main-Is:              Example2.hs
+
+Executable example3
+  Hs-Source-Dirs:       examples
+  if !flag(examples)
+    Buildable:          False
+  else
+    Build-Depends:      base >= 3 && < 5, craftwerk
+  Main-Is:              Example3.hs
 
 Executable test-craftwerk
   Hs-Source-Dirs:       test

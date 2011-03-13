@@ -33,8 +33,7 @@ function conf_doc_build_install()
     echo -e "\e[0;32m===[ Done $1 ]===\e[0m"
 }
 
-conf_doc_build_install craftwerk example1
-
+conf_doc_build_install craftwerk example1 example2 example3
 conf_doc_build_install craftwerk-cairo
 conf_doc_build_install craftwerk-gtk example1
 
