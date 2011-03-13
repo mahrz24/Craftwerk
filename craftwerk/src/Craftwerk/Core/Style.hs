@@ -61,18 +61,18 @@ data LineJoin = JoinRound | JoinBevel | JoinMiter deriving (Show,Eq)
 
 -- | A record holding all possible properties.
 data StyleProperties =
-  StyleProperties { lineWidth :: Maybe Float
+  StyleProperties { lineWidth :: Maybe Double
                   , lineColor :: Maybe Color
                   , fillColor :: Maybe Color
                   , fill :: Maybe Bool
                   , stroke :: Maybe Bool
                   , clip :: Maybe Bool
                   , closePath :: Maybe Bool
-                  , dashes :: Maybe [Float]
-                  , dashPhase :: Maybe Float
+                  , dashes :: Maybe [Double]
+                  , dashPhase :: Maybe Double
                   , lineCap :: Maybe LineCap
                   , lineJoin :: Maybe LineJoin
-                  , miterLimit :: Maybe Float
+                  , miterLimit :: Maybe Double
                   , arrowTips :: Maybe ArrowTips
                   } deriving (Show, Eq)
                              
@@ -107,7 +107,7 @@ defaultStyle =
                   , fill = Just False
                   , clip = Just False
                   , closePath = Just False
-                  , dashes = Just [] :: Maybe [Float]
+                  , dashes = Just [] :: Maybe [Double]
                   , dashPhase = Just 0.0
                   , lineCap = Just CapButt
                   , lineJoin = Just JoinMiter
@@ -115,7 +115,7 @@ defaultStyle =
                   , arrowTips = Just (TipNone, TipNone)
                   }
 
-setLineWidth :: (Maybe Float) -> StyleProperties
+setLineWidth :: (Maybe Double) -> StyleProperties
 setLineWidth a = newStyle { lineWidth = a }
 
 fillOnly :: StyleProperties
@@ -132,7 +132,7 @@ yes = Just True
 no :: Maybe Bool
 no = Just False
 
-width :: Float -> Maybe Float
+width :: Double -> Maybe Double
 width w = Just w
 
 verythin = width 0.2

@@ -35,15 +35,13 @@ import Control.Monad.Trans
 
 import Text.Printf
 
-import GHC.Float
-
 data State = State { zoomFactor :: Double 
                    , currentContext :: String
                    , curOptions :: Map.Map String Option
                    }
                                                       
-data Option = NumberOption Float
-            | RangeOption Float Float Float Float
+data Option = NumberOption Double
+            | RangeOption Double Double Double Double
             | BoolOption Bool
             | ChoiceOption [String] Int
 
@@ -61,11 +59,11 @@ isSet (BoolOption b) = b
 isSet _ = False
 
 data RenderContext = 
-  RenderContext { cairo :: (Map.Map String Option -> Float -> Float -> IO (Cairo.Render())) 
+  RenderContext { cairo :: (Map.Map String Option -> Double -> Double -> IO (Cairo.Render())) 
                 , tikz :: (Map.Map String Option -> IO String) }
   
-renderFigure :: Float -> 
-                Float -> 
+renderFigure :: Double -> 
+                Double -> 
                 (Map.Map String Option -> IO Figure) -> 
                 RenderContext
 renderFigure w h f  = do
@@ -362,8 +360,7 @@ createOption canvas stateRef box (lbl, opt) =
                  return ())
             return ()
        RangeOption min max step def ->
-         do adj <- adjustmentNew (float2Double $ def) (float2Double $ min)
-                   (float2Double $ max) (float2Double $ step) (float2Double $ step*10) 0.0
+         do adj <- adjustmentNew def min max  step (step*10) 0.0
             scl <- spinButtonNew adj 0.5 4
             boxPackStart hbox scl PackGrow 10
             onValueChanged adj (
@@ -371,7 +368,7 @@ createOption canvas stateRef box (lbl, opt) =
                  val <- adjustmentGetValue adj
                  writeIORef stateRef 
                    (state { curOptions = 
-                               Map.update (const $ Just $ NumberOption (double2Float val)) 
+                               Map.update (const $ Just $ NumberOption val) 
                                lbl 
                                (curOptions state)
                           })

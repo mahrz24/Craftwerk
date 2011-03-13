@@ -50,13 +50,13 @@ import Craftwerk.Core.Style
 import Craftwerk.Core.Color
 import Data.Monoid
 
-type Point = (Float, Float)
+type Point = (Double, Double)
 type Vector = Point
 
 -- | Path creation
 data Segment = MoveTo Point
              | LineSegment Point
-             | ArcSegment Point Float Float Float
+             | ArcSegment Point Double Double Double
              | CurveSegment Point Point Point
              deriving (Show, Eq)
                
@@ -70,13 +70,13 @@ data Figure = Blank
             | Composition [Figure]
             | Style StyleProperties Figure
             | Path Path
-            | Circle Point Float
-            | Grid Vector Float Float
+            | Circle Point Double
+            | Grid Vector Double Double
             | Text String
             | NoDecorations Figure
             deriving (Show, Eq)
 
-data Transform = Rotate Float
+data Transform = Rotate Double
                | Scale Vector
                | Translate Vector
                deriving (Show, Eq)
@@ -93,7 +93,7 @@ canvas :: Figure -> Figure
 canvas (Transform t f) = Canvas t f
 canvas f = f
 
-rotate :: Float -> Figure -> Figure
+rotate :: Double -> Figure -> Figure
 rotate r = Transform (Rotate r)
   
 scale :: Vector -> Figure -> Figure
@@ -117,7 +117,7 @@ moveTo = MoveTo
 lineTo :: Point -> Segment
 lineTo = LineSegment
 
-arc :: Point -> Float -> Float -> Float -> Segment
+arc :: Point -> Double -> Double -> Double -> Segment
 arc = ArcSegment
 
 curveTo :: Point -> Point -> Point -> Segment
@@ -126,7 +126,7 @@ curveTo = CurveSegment
 path :: Path -> Figure
 path p = Path p
 
-circle :: Point -> Float -> Figure
+circle :: Point -> Double -> Figure
 circle = Circle
 
 grid :: Vector -> Vector -> Figure
@@ -135,7 +135,7 @@ grid v (x,y) = Grid v x y
 text :: String -> Figure
 text = Text
 
-point :: Float -> Float -> Point
+point :: Double -> Double -> Point
 point x y = (x,y)
 
 lineToPath :: Line -> Path

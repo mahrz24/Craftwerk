@@ -10,8 +10,6 @@ module Craftwerk.Core.Driver.Cairo (
   figureToRenderContext
   )where
 
-import GHC.Float
-
 import Craftwerk.Core.Figure
 import Craftwerk.Core.Color
 import Craftwerk.Core.Style
@@ -50,7 +48,7 @@ figureToRenderContextWithStyle (Style ns a) =
 figureToRenderContextWithStyle (Transform t a) = do
   lift $ Cairo.save >>
     case t of
-      Rotate r    -> Cairo.rotate (radians $ float2Double r)
+      Rotate r    -> Cairo.rotate (radians r)
       Scale p     -> fnC Cairo.scale p
       Translate p -> fnC Cairo.translate p
   figureToRenderContextWithStyle a 
@@ -79,11 +77,10 @@ figureToRenderContextWithStyle (Path a) = ask >>= \c ->
                     (do cairoSetColor (sp lineColor)
                         cairoSetLineJoin (sp lineJoin) 
                         cairoSetLineCap (sp lineCap)
-                        Cairo.setMiterLimit (float2Double $ sp miterLimit)
-                        Cairo.setDash (map float2Double $ sp dashes) 
-                           (float2Double $ sp dashPhase)
+                        Cairo.setMiterLimit  (sp miterLimit)
+                        Cairo.setDash (sp dashes) (sp dashPhase)
                         cairoPath a sp
-                        Cairo.setLineWidth (float2Double $ sp lineWidth)
+                        Cairo.setLineWidth (sp lineWidth)
                         Cairo.save
                         Cairo.setMatrix (strokeMatrix c)
                         Cairo.stroke 
@@ -100,14 +97,11 @@ figureToRenderContextWithStyle other =
 
 -- Helper functions
 
-pointConvert :: (Float, Float) -> (Double , Double)
-pointConvert (a,b) = (float2Double a, float2Double b)
-
-fnC :: (Double -> Double -> c) -> (Float, Float) -> c
-fnC f = (uncurry f) . pointConvert
+fnC :: (Double -> Double -> c) -> (Double, Double) -> c
+fnC f = uncurry f
 
 cairoSetColor (RGBA r g b a) =
-  Cairo.setSourceRGB (float2Double r) (float2Double g) (float2Double b)
+  Cairo.setSourceRGB r g b
   
 cairoSetLineJoin lj = 
   Cairo.setLineJoin (case lj of
@@ -129,24 +123,24 @@ cairoSegment (MoveTo p) = (fnC Cairo.moveTo) p
 cairoSegment (LineSegment p) = (fnC Cairo.lineTo) p
 cairoSegment (ArcSegment (x,y) sa ea r) = 
   if sa > ea then
-    Cairo.arcNegative (float2Double $ x-r*cos(radians sa)) (float2Double $ y-r*sin(radians sa)) 
-    (float2Double r) (radians $ float2Double (sa)) (radians $ float2Double (ea))
+    Cairo.arcNegative (x-r*cos(radians sa)) (y-r*sin(radians sa)) 
+     r (radians sa) (radians ea)
   else
-    Cairo.arc (float2Double $ x-r*cos(radians sa)) (float2Double $ y-r*sin(radians sa)) 
-    (float2Double r) (radians $ float2Double (sa)) (radians $ float2Double (ea))
+    Cairo.arc (x-r*cos(radians sa)) (y-r*sin(radians sa)) 
+     r (radians sa) (radians ea)
 cairoSegment (CurveSegment (px,py) (c1x,c1y) (c2x,c2y)) = 
   Cairo.curveTo 
-  (float2Double c1x) 
-  (float2Double c1y) 
-  (float2Double c2x) 
-  (float2Double c2y) 
-  (float2Double px) 
-  (float2Double py) 
+  c1x 
+  c1y 
+  c2x 
+  c2y 
+  px 
+  py 
   
   
 transformationMatrix t m = case t of
   Rotate r    -> 
-    Matrix.rotate (radians $ float2Double r) m
+    Matrix.rotate (radians r) m
   Scale p     -> fnC Matrix.scale p m
   Translate p -> fnC Matrix.translate p m
 

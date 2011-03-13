@@ -194,7 +194,7 @@ tikzLineJoin lj = case lj of
   JoinBevel -> "bevel"
   JoinMiter -> "miter"
 
-dashPattern :: Bool -> [Float] -> String
+dashPattern :: Bool -> [Double] -> String
 dashPattern b (x:xs) = (if b then "on " else "off ") ++ (printNum x) ++ " "
                        ++ dashPattern (not b) xs
 dashPattern _ _ = ""
