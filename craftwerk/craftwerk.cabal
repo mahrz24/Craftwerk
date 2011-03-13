@@ -50,10 +50,9 @@ Flag examples
 
 Library
   Hs-Source-Dirs:   src
-  Build-Depends:    base >= 3 && < 5, monads-fd, vector-space
+  Build-Depends:    base >= 3 && < 5, monads-fd, vector-space, colour
   Exposed-Modules:  Craftwerk.Core,
                     Craftwerk.Core.Color,
-                    Craftwerk.Core.ColorNames,
                     Craftwerk.Core.Style,
                     Craftwerk.Core.Figure,
                     Craftwerk.Core.Driver.Tikz,

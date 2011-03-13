@@ -15,7 +15,6 @@
 module Craftwerk.Core
        (
          module Craftwerk.Core.Color
-       , module Craftwerk.Core.ColorNames
        , module Craftwerk.Core.Style
        , module Craftwerk.Core.Figure
 
@@ -24,7 +23,6 @@ module Craftwerk.Core
        ) where
 
 import Craftwerk.Core.Color
-import Craftwerk.Core.ColorNames
 import Craftwerk.Core.Style
 import Craftwerk.Core.Figure
 

@@ -100,8 +100,12 @@ figureToRenderContextWithStyle other =
 fnC :: (Double -> Double -> c) -> (Double, Double) -> c
 fnC f = uncurry f
 
-cairoSetColor (RGBA r g b a) =
-  Cairo.setSourceRGB r g b
+cairoSetColor color =
+  let rgb = toSRGB color
+  in Cairo.setSourceRGB (channelRed rgb) 
+     (channelGreen rgb) 
+     (channelBlue rgb)
+
   
 cairoSetLineJoin lj = 
   Cairo.setLineJoin (case lj of

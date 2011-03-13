@@ -23,6 +23,7 @@ module Craftwerk.Core.Style (
   -- * Property values
   , yes
   , no
+  , rgb
   , width
   , verythin
   , thin
@@ -47,7 +48,6 @@ module Craftwerk.Core.Style (
   ) where
 
 import Craftwerk.Core.Color
-import Craftwerk.Core.ColorNames
 
 import Data.Maybe
 
@@ -62,8 +62,8 @@ data LineJoin = JoinRound | JoinBevel | JoinMiter deriving (Show,Eq)
 -- | A record holding all possible properties.
 data StyleProperties =
   StyleProperties { lineWidth :: Maybe Double
-                  , lineColor :: Maybe Color
-                  , fillColor :: Maybe Color
+                  , lineColor :: Maybe FigureColor
+                  , fillColor :: Maybe FigureColor
                   , fill :: Maybe Bool
                   , stroke :: Maybe Bool
                   , clip :: Maybe Bool
@@ -131,6 +131,9 @@ yes = Just True
 -- | Alias for 'Just False' to make style specification more convenient.
 no :: Maybe Bool
 no = Just False
+
+rgb :: Double -> Double -> Double -> Maybe FigureColor
+rgb r g b = Just $ sRGB r g b
 
 width :: Double -> Maybe Double
 width w = Just w

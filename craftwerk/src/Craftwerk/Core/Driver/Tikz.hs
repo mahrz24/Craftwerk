@@ -201,11 +201,16 @@ dashPattern _ _ = ""
 
 -- * TikZ/PGF & xcolor Commands
 
-xcolor name (RGBA r g b a) =
-  texCommand "definecolor"
-  [ name
-  , "rgb"
-  , (printf "%.2f,%.2f,%.2f" r g b)]
+xcolor :: String -> FigureColor -> String
+xcolor name color =
+  let rgb = toSRGB color
+  in texCommand "definecolor"
+     [ name
+     , "rgb"
+     , (printf "%.2f,%.2f,%.2f" 
+        (channelRed rgb) 
+        (channelGreen rgb) 
+        (channelBlue rgb))]
 
 prependColor name style prop =
   maybe (liftM id) (\p -> liftM ((++) (xcolor name $ p))) (prop style)

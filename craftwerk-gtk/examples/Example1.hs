@@ -36,7 +36,7 @@ main = do displayMultiple ([ ("Test", NumberOption 1)
             , ("Second", renderFigure 10 10 (\opt -> return $
                          style newStyle { lineWidth = Just (value $ opt Map.! "Test 1")
                                           , closePath =  Just (isSet $ opt Map.! "Test 2")
-                                          , fillColor = Just $ makeColor 0.4 0.2 (fromIntegral $ choice $ opt Map.! "Choice")
+                                          , fillColor = rgb 0.4 0.2 (fromIntegral $ choice $ opt Map.! "Choice")
                                           , fill = yes }
                          $ composition
                          [
