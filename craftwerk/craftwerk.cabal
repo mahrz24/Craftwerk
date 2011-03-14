@@ -41,7 +41,7 @@ Flag examples
 
 Library
   Hs-Source-Dirs:       src
-  Build-Depends:        base >= 3 && < 5, mtl, vector-space, colour
+  Build-Depends:        base >= 3 && < 5, mtl, vector-space >= 0.7 && < 0.8, colour >= 2.1 && < 2.4
   Exposed-Modules:      Graphics.Craftwerk.Core,
                         Graphics.Craftwerk.Core.Color,
                         Graphics.Craftwerk.Core.Style,

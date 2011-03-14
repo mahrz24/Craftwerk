@@ -35,11 +35,11 @@ Flag examples
 Library
   Hs-Source-Dirs:    src
   Build-Depends:     base >= 3 && < 5,
-                     cairo >= 0.11,
-                     gtk >= 0.11,
-                     containers,
-                     craftwerk-cairo,
-                     craftwerk,
+                     cairo >= 0.11.1 && < 0.13,
+                     gtk >= 0.11.1 && < 0.13,
+                     containers >= 0.3 && < 0.5,
+                     craftwerk-cairo >= 0.1 && < 0.2,
+                     craftwerk >= 0.1 && < 0.2,
                      mtl
   Exposed-Modules:   Graphics.Craftwerk.UI,
                      Graphics.Craftwerk.UI.Gtk
