@@ -5,7 +5,7 @@ import Graphics.Craftwerk.Core
 -- A simple example that displays the craftwerk logo
 main = putStrLn . figureToTikzPicture
        $ style newStyle { closePath = yes
-                        , fillColor = rgb 0.6 0.2 0.1
+                        , fillColor = Just red
                         , lineWidth = width 2.0
                         , stroke = yes 
                         , fill = yes }
