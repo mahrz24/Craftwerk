@@ -5,6 +5,7 @@ License-file:	     LICENSE
 Author:              Malte Harder <malte.harder@gmail.com>
 Maintainer:          Malte Harder <malte.harder@gmail.com>
 Category:	     Graphics
+Homepage:            http://mahrz.github.com/craftwerk.html
 Synopsis:            Gtk UI for Craftwerk.
 Description:	     Gtk UI functions for Craftwerk, a high-level and easy to use graphics library
                      with integrated TikZ output.
@@ -55,4 +56,8 @@ Executable example1
   Main-Is:           Example1.hs
   if !flag(examples)
     Buildable:       False
+
+source-repository head
+  type:     git
+  location: git://github.com/mahrz/Craftwerk.git
 

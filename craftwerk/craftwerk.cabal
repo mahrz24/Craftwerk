@@ -5,6 +5,7 @@ License-file:	        LICENSE
 Author:                 Malte Harder <malte.harder@gmail.com>
 Maintainer:             Malte Harder <malte.harder@gmail.com>
 Category:	        Graphics
+Homepage:               http://mahrz.github.com/craftwerk.html
 Synopsis:	        2D graphics library with integrated TikZ output.
 Description:            A high-level and easy to use graphics library
                         with integrated TikZ output.
@@ -88,4 +89,8 @@ Executable test-craftwerk
                         test-framework-quickcheck2,
                         QuickCheck,
                         HUnit
+
+source-repository head
+  type:     git
+  location: git://github.com/mahrz/Craftwerk.git
 
