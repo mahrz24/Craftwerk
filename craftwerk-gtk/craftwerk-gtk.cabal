@@ -16,7 +16,7 @@ Description:	     Gtk UI functions for Craftwerk, a high-level and easy to use g
                      .
 		     Craftwerk tries to encapsulate the graphics backend such that figures
 		     can also be rendered with a Cairo backend and quickly displayed in a
-		     Gtk window. The aim is to support TikZ and Cairo seamlessly as
+		     Gtk window. The aim is to support TikZ and Cairo as seamlessly as
 		     possible, meaning that graphics produced with either backend should
 		     look as similar as possible. Other backends are easily written and the
 		     aim is to provide generic fallback functions for features that are not
