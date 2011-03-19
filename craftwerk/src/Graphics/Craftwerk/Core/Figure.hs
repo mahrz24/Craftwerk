@@ -50,7 +50,7 @@ import Graphics.Craftwerk.Core.Style
 import Graphics.Craftwerk.Core.Color
 import Data.Monoid
 
-type Point = (Double, Double)
+type Point = (Double,Double)
 type Vector = Point
 
 -- | Path creation

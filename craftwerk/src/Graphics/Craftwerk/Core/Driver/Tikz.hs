@@ -61,7 +61,7 @@ figureToTikzPictureWithStyle (Style ns a) =
 
 figureToTikzPictureWithStyle (Canvas (Rotate r) a) = ask >>= \c ->
   liftM
-  (scope [] .
+  (emptyScope .
    (++)
    (coordinateMatrix c ++
     pgfLowLevel "rotate" (printNum r) ++
@@ -70,7 +70,7 @@ figureToTikzPictureWithStyle (Canvas (Rotate r) a) = ask >>= \c ->
 
 figureToTikzPictureWithStyle (Canvas (Scale (x,y)) a) = ask >>= \c ->
   liftM
-  (scope [] .
+  (emptyScope .
    (++)
    (coordinateMatrix c ++
     pgfLowLevel "xscale" (printNum x) ++
@@ -80,7 +80,7 @@ figureToTikzPictureWithStyle (Canvas (Scale (x,y)) a) = ask >>= \c ->
 
 figureToTikzPictureWithStyle (Canvas (Translate (x,y)) a) = ask >>= \c ->
   liftM
-  (scope [] .
+  (emptyScope .
    (++)
    (coordinateMatrix c ++
     pgfLowLevel "xshift" ((printNum x) ++ "cm") ++
@@ -216,6 +216,8 @@ xcolor name color =
 
 prependColor name style prop =
   maybe (liftM id) (\p -> liftM (xcolor name p ++)) (prop style)
+
+emptyScope body = environment "scope" [] body
 
 scope [] body = body
 scope args body = environment "scope" args body

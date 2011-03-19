@@ -181,7 +181,14 @@ renderWindow opt ctxs = do
 
   sidebox <- vBoxNew False 0
   --boxPackStart hbox sidebox PackNatural 0
-  containerAdd hpane sidebox
+  
+  scrwin <- scrolledWindowNew Nothing Nothing
+  scrolledWindowSetPolicy scrwin PolicyNever PolicyAutomatic
+  scrolledWindowAddWithViewport scrwin sidebox
+
+  containerAdd hpane scrwin
+  
+  --containerAdd hpane sidebox
 
   -- Create the label and option widgets
   opt <- optionToUI canvas opt stateRef

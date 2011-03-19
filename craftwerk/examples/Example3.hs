@@ -22,7 +22,7 @@ main = putStrLn . figureToTikzPicture
                         , lineWidth = Just 1
                         , arrowTips = arrow (<=>) } 
          $ path [MoveTo (1,5),  LineSegment (2,5), LineSegment (2.5,6)]
-       , path [MoveTo (6,2),  ArcSegment (6,2) 160 45 2]
+       , canvas . (scale (1.2,1.2)) $ path [MoveTo (6,2),  ArcSegment (6,2) 160 45 2]
        , path [MoveTo (6,2),  ArcSegment (6,2) 45 160 2]
 
        , style newStyle { lineWidth = Just $ 1, fill = no } 
