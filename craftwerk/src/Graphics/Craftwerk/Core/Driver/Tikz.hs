@@ -224,7 +224,11 @@ scope args body = environment "scope" args body
 
 node n = texCommand "node" [n]
 
-pathToString = foldr ((++) . segmentToString) ""
+pathToString ((ArcSegment p sa ea r):segs) = 
+  pointToString p ++ " arc " ++ printf "(%f:%f:%fcm)" sa ea r ++ 
+  pathToString segs
+
+pathToString segs = foldr ((++) . segmentToString) "" segs
 
 segmentToString (MoveTo p) = 
   pointToString p

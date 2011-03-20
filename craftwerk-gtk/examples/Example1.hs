@@ -21,7 +21,8 @@ main =
                    (round $ value (opt Map.! "Iteration"))
                    triangle
           ))]
-
+       
+       
 triangle = line [(0,0),(0,1),(1,0)]
 
 colorStyle col = style newStyle { closePath = yes
