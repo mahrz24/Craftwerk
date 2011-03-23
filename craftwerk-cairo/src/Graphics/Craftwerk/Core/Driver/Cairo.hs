@@ -92,6 +92,30 @@ figureToRenderContextWithStyle (Decoration p a) =
                Cairo.rotate (radians $ -dec)
      figureToRenderContextWithStyle a
      lift Cairo.restore
+
+figureToRenderContextWithStyle (Text s) = ask >>= \c ->
+  let sp = getProperty $ styleP c
+  in do lift $ do Cairo.save
+                  Cairo.selectFontFace "CMU Serif" Cairo.FontSlantNormal Cairo.FontWeightNormal
+                  Cairo.scale 1 (-1)
+                  when (sp clip) (do Cairo.textPath s
+                                     Cairo.clip)
+                  when (sp fill && not (sp clip))
+                    (do cairoSetColor (sp fillColor)
+                        Cairo.textPath s
+                        Cairo.fill)
+                  when (sp stroke && not (sp clip))
+                    (do cairoSetColor (sp lineColor)
+                        cairoSetLineJoin (sp lineJoin)
+                        cairoSetLineCap (sp lineCap)
+                        Cairo.setMiterLimit  (sp miterLimit)
+                        Cairo.setDash (sp dashes) (sp dashPhase)
+                        Cairo.textPath s
+                        Cairo.setLineWidth (sp lineWidth)
+                        Cairo.save
+                        Cairo.setMatrix (strokeMatrix c)
+                        Cairo.stroke
+                        Cairo.restore)
      
 figureToRenderContextWithStyle (Path a) = ask >>= \c ->
   let sp = getProperty $ styleP c
@@ -119,7 +143,7 @@ figureToRenderContextWithStyle (Path a) = ask >>= \c ->
            arrowTipsForPath a (sp lineWidth) (sp arrowTips))
 
 
-figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill
+
 
 figureToRenderContextWithStyle other =
   figureToRenderContextWithStyle (genericLevel2Figure other)

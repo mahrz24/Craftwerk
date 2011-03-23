@@ -128,7 +128,7 @@ figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) =
 figureToTikzPictureWithStyle (Composition a) =
    concat `liftM` mapM figureToTikzPictureWithStyle a
 
-figureToTikzPictureWithStyle (Text a) = return $ node a
+figureToTikzPictureWithStyle (Text a) = return $ "\\path (0,0) node[anchor=south west] {" ++ a ++ "};"
 
 figureToTikzPictureWithStyle (Path a) = ask >>= \c ->
    let sp = getProperty (styleP c)
