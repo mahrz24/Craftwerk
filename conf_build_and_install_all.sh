@@ -35,5 +35,5 @@ function conf_doc_build_install()
 
 conf_doc_build_install craftwerk example1 example2 example3
 conf_doc_build_install craftwerk-cairo
-conf_doc_build_install craftwerk-gtk example1
+conf_doc_build_install craftwerk-gtk example1 example2 example3
 

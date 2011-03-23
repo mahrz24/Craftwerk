@@ -10,8 +10,9 @@
 
 module Graphics.Craftwerk.Core.Driver.Generic (
   -- * Internal conversion to simpler primitives
-  genericFigure
+  genericLevel2Figure
   , arrowTipsForPath
+    -- * Conversion helpers
   , radians
   , degree
   ) where
@@ -22,23 +23,25 @@ import Graphics.Craftwerk.Core.Style
 
 import Data.VectorSpace
 
--- | At the moment only 'Circle' and 'Grid' figures are converted to paths.
-genericFigure :: Figure -> Figure
-genericFigure (Circle (x,y) r) =
+-- | Converts figures using Level 3 (TikZ) features to Level 2 (Cairo) features.
+genericLevel2Figure :: Figure -> Figure
+genericLevel2Figure (Circle (x,y) r) =
   Path [ArcSegment (x+r,y) 0 360  r]
 
-genericFigure (Grid (x,y) xs ys) =
+genericLevel2Figure (Grid (x,y) xs ys) =
   composition $
   [line [(0,fromIntegral i * ys),(x,fromIntegral i * ys)] | i <- [0 .. floor (y/ys)]] ++
   [line [(fromIntegral i *xs,0),(fromIntegral i * xs,y)] | i <- [0 .. floor (x/xs)]]
 
--- Avoid exceptions
-genericFigure _ = Blank
+-- Everything else is a valid level 2 figure
+genericLevel2Figure f = f
+
+-- Methods to express level 3 styles as level 2 figures
 
 -- | Creates arrow tip figure for a given path
 arrowTipsForPath :: [Segment] -> Double -> (ArrowTip, ArrowTip) -> Figure
 arrowTipsForPath p lw at =
-  NoDecorations $ composition $ foldr (tipForSegment lw at) []
+  composition $ foldr (tipForSegment lw at) []
   (adjacent $ MoveTo (0,0):p ++ [MoveTo (0,0)])
 
 tipForSegment lw (l,r) (s1,s2,s3) ats =
@@ -53,7 +56,6 @@ rightTipForSegment lw r s1 s2 (MoveTo p) = arrowTipForTangent lw r (rightTangent
 rightTipForSegment _ _ _ _ _ = []
 
 data Tangent = NoTangent | Tangent Point Point deriving (Eq, Show)
-
 
 tangent p1 p2 = if p1 == p2 then
                   NoTangent
@@ -73,18 +75,19 @@ rightTangent _ _ = NoTangent
 arrowTipForTangent _ _ NoTangent = []
 arrowTipForTangent _ TipNone _ = []
 arrowTipForTangent lw TipDefault t =
-  let arrowsize = 0.06 + 0.04*lw
+  let arrowsize = 0.8 + 2*lw
   in arrowTip t $ style newStyle { lineCap = Just CapRound } $ composition
      [ path [ArcSegment (0,0) 90 180 arrowsize]
      , path [ArcSegment (0,0) 270 180 arrowsize]]
 
-
 arrowTip (Tangent p (x,y)) f =
-  [translate p $ rotate (degree $ atan2 y x) f]
+  [translate p $ Decoration p $ rotate (degree $ -(atan2 y x)) $ f]
 
 adjacent :: [a] -> [(a,a,a)]
 adjacent xs = zipWith3 triple xs (tail xs) (tail $ tail xs)
   where triple a b c = (a,b,c)
+
+-- General methods used in drivers
 
 -- | Angle conversion
 radians :: (Floating a) => a -> a

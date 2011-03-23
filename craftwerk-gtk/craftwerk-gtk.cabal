@@ -57,6 +57,30 @@ Executable example1
   if !flag(examples)
     Buildable:       False
 
+Executable example2
+  Hs-Source-Dirs:    examples
+  if flag(examples)
+    Build-Depends:   base >= 3 && < 5,
+                     craftwerk,
+                     craftwerk-cairo,
+                     craftwerk-gtk,
+                     containers
+  Main-Is:           Example2.hs
+  if !flag(examples)
+    Buildable:       False
+
+Executable example3
+  Hs-Source-Dirs:    examples
+  if flag(examples)
+    Build-Depends:   base >= 3 && < 5,
+                     craftwerk,
+                     craftwerk-cairo,
+                     craftwerk-gtk,
+                     containers
+  Main-Is:           Example3.hs
+  if !flag(examples)
+    Buildable:       False
+
 source-repository head
   type:     git
   location: git://github.com/mahrz/Craftwerk.git

@@ -73,7 +73,7 @@ data Figure = Blank
             | Circle Point Double
             | Grid Vector Double Double
             | Text String
-            | NoDecorations Figure
+            | Decoration Point Figure
             deriving (Show, Eq)
 
 data Transform = Rotate Double

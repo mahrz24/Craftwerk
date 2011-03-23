@@ -25,7 +25,9 @@ import Control.Monad
 import Control.Monad.Reader
 
 data Context = Context { styleP :: StyleProperties
+                       , initialMatrix :: Matrix
                        , strokeMatrix :: Matrix
+                       , decorationsRotation :: Double
                        , noDecorations :: Bool
                        }
 
@@ -34,10 +36,12 @@ type Render a = ReaderT Context Cairo.Render a
 -- | Render a Craftwerk 'Figure' within a 'Cairo.Render' context
 figureToRenderContext :: Figure -> Cairo.Render ()
 figureToRenderContext f = do
-  strokeMatrix <- Cairo.getMatrix
+  curMatrix <- Cairo.getMatrix
   runReaderT (figureToRenderContextWithStyle f)
     Context { styleP = defaultStyle
-            , strokeMatrix = strokeMatrix
+            , initialMatrix = curMatrix
+            , strokeMatrix = curMatrix
+            , decorationsRotation = 0
             , noDecorations = False
             }
 
@@ -46,14 +50,26 @@ figureToRenderContextWithStyle (Style ns a) =
   local (\c -> c { styleP = mergeProperties (styleP c) ns}) $
   figureToRenderContextWithStyle a
 
-figureToRenderContextWithStyle (Transform t a) = do
-  lift $ Cairo.save >>
-    case t of
-      Rotate r    -> Cairo.rotate (radians r)
-      Scale p     -> fnC Cairo.scale p
-      Translate p -> fnC Cairo.translate p
-  figureToRenderContextWithStyle a
-  lift Cairo.restore
+
+figureToRenderContextWithStyle (Transform (Rotate r) a) = 
+  local (\c -> 
+          c { decorationsRotation = (decorationsRotation c) + r}) $
+  do
+    lift $ Cairo.save >> Cairo.rotate (radians r)
+    figureToRenderContextWithStyle a
+    lift Cairo.restore
+
+figureToRenderContextWithStyle (Transform (Translate p) a) =   
+  do
+    lift $ Cairo.save >> fnC Cairo.translate p
+    figureToRenderContextWithStyle a
+    lift Cairo.restore
+    
+figureToRenderContextWithStyle (Transform (Scale p) a) = 
+  do
+    lift $ Cairo.save >> fnC Cairo.scale p
+    figureToRenderContextWithStyle a
+    lift Cairo.restore
 
 figureToRenderContextWithStyle (Canvas t a) =
   local (\c -> c { strokeMatrix = transformationMatrix t (strokeMatrix c)
@@ -62,10 +78,21 @@ figureToRenderContextWithStyle (Canvas t a) =
 figureToRenderContextWithStyle (Composition a) =
   mapM_ figureToRenderContextWithStyle a
 
-figureToRenderContextWithStyle (NoDecorations a) =
+figureToRenderContextWithStyle (Decoration p a) =
   local (\c -> c { noDecorations = True
-                 }) $ figureToRenderContextWithStyle a
-
+                 }) $ ask >>= \c ->
+  do lift $ do Cairo.save 
+               curm <- (Cairo.getMatrix)
+               let dec = (decorationsRotation c)
+                   ini = (initialMatrix c)
+                   dorigin = Matrix.transformPoint 
+                             ((Matrix.invert ini)*(curm)) (0,0)
+               Cairo.setMatrix (ini)
+               fnC Cairo.translate dorigin
+               Cairo.rotate (radians $ -dec)
+     figureToRenderContextWithStyle a
+     lift Cairo.restore
+     
 figureToRenderContextWithStyle (Path a) = ask >>= \c ->
   let sp = getProperty $ styleP c
   in do lift $ do when (sp clip) (do cairoPath a sp
@@ -95,7 +122,7 @@ figureToRenderContextWithStyle (Path a) = ask >>= \c ->
 figureToRenderContextWithStyle (Text a) = lift $ Cairo.textPath a >> Cairo.fill
 
 figureToRenderContextWithStyle other =
-  figureToRenderContextWithStyle (genericFigure other)
+  figureToRenderContextWithStyle (genericLevel2Figure other)
 
 -- Helper functions
 
