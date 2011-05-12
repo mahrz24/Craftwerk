@@ -7,20 +7,18 @@ import Graphics.Craftwerk.Core.Driver.Cairo
 import qualified Data.Map as Map
 
 main = 
-  do displayMultiple 
+  do displayRender
        ([ ("Iteration", RangeOption 1 6 1 1)
         , ("Color", ChoiceOption ["red"
                                  ,"green"
                                  ,"blue"] 0)])
        $
-       [ ("Iterator", 
-          renderFigure 1 1
-          (\opt -> return $
-                   colorStyle (choice $ opt Map.! "Color") $
-                   iterations
-                   (round $ value (opt Map.! "Iteration"))
-                   triangle
-          ))]
+       renderFigure 1 1 (\opt -> return $
+                                 colorStyle (choice $ opt Map.! "Color") $
+                                            iterations
+                                            (round $ value (opt Map.! "Iteration"))
+                                            triangle
+                        )
        
        
 triangle = line [(0,0),(0,1),(1,0)]

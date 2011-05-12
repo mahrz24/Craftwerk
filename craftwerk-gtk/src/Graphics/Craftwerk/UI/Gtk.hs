@@ -16,7 +16,6 @@ module Graphics.Craftwerk.UI.Gtk (
     -- * Display figures
   , renderFigure
   , displayRender
-  , displayMultiple
   , renderWindow
 
     -- * Option values
@@ -44,11 +43,14 @@ import Control.Monad.Trans
 import Text.Printf
 
 data State = State { zoomFactor :: Double
-                   , currentContext :: String
                    , curOptions :: Map.Map String Option
                    }
 
+baseSize :: Int
+baseSize = 400
+
 -- | Describing options for a user interface.
+
 data Option = NumberOption Double
               -- | A range: min, max, step and initial value.
             | RangeOption Double Double Double Double
@@ -72,14 +74,21 @@ isSet _ = False
 -- | Combined cairo and tikz rendering functions depending on the options.
 data RenderContext =
   RenderContext { cairo :: Map.Map String Option -> Double -> Double -> IO (Cairo.Render())
-                , tikz :: Map.Map String Option -> IO String}
+                , tikz :: Map.Map String Option -> IO String
+                , ctxWidth :: Double
+                , ctxHeight :: Double }
+
+heightInRatio :: RenderContext -> Int -> Int
+heightInRatio rc w = 
+    let aspectRatio = (ctxHeight rc)/(ctxWidth rc)
+    in round $ (fromIntegral w) * aspectRatio
 
 -- | Renders an 'IO Figure' into a render context with the given dimensions.
 renderFigure :: Double -- ^ Width of the coordinate system of the GTK widget
                 -> Double -- ^ Height of the coordinate system of the GTK widget
                 -> (Map.Map String Option -> IO Figure) -- ^ The render function
                 -> RenderContext
-renderFigure w h f  = RenderContext r (liftM figureToTikzPicture . f)
+renderFigure w h f  = RenderContext r (liftM figureToTikzPicture . f) w h
   where r op wx hx = liftM (s wx hx) (f op)
         s wx hx = figureToRenderContext . scale (wx/w, -hx/h) . translate (0,-h)
 
@@ -89,36 +98,21 @@ renderFigure w h f  = RenderContext r (liftM figureToTikzPicture . f)
 displayRender :: [(String, Option)] -> RenderContext -> IO ()
 displayRender opt r = do
   initGUI
-  window <- renderWindow opt [("Render",r)]
-  widgetShowAll window
-  onDestroy window mainQuit
-  mainGUI
-
--- | Display multiple render contexts in a Gtk window, starts the Gtk main loop.
--- The first argument contains a list of named options whose UI values
--- are passed to the render context.
-displayMultiple :: [(String, Option)] -> [(String, RenderContext)] -> IO ()
-displayMultiple opt rcs = do
-  initGUI
-  window <- renderWindow opt rcs
+  window <- renderWindow opt "Render View" r
   widgetShowAll window
   onDestroy window mainQuit
   mainGUI
 
 -- | Same as 'displayMultiple' except that the Gtk main loop is not started or
 -- initialized. The window is not visible upon return.
-renderWindow :: [(String, Option)] -> [(String, RenderContext)] -> IO Window
-renderWindow opt ctxs = do
-  let rcs = Map.fromList ctxs
+renderWindow :: [(String, Option)] -> String ->  RenderContext -> IO Window
+renderWindow opt title ctx = do
   window <- windowNew
-  set window [windowTitle := "Render View",
-              windowDefaultWidth := 420, windowDefaultHeight := 450]
-
-  let firstContext = fst $ head ctxs
+  set window [windowTitle := title,
+              windowDefaultWidth := 640, windowDefaultHeight := 480]
 
   -- Initialize the state
   stateRef <- newIORef State { zoomFactor = 1.0
-                             , currentContext = firstContext
                              , curOptions = Map.fromList opt }
 
   -- The box layout
@@ -135,8 +129,6 @@ renderWindow opt ctxs = do
   zooi <- actionNew "ZOOI" "Zoom in"  (Just "Zoom in") (Just stockZoomIn)
   zooo <- actionNew "ZOOO" "Zoom out"  (Just "Zoom out") (Just stockZoomOut)
   zoof <- actionNew "ZOOF" "Zoom to fit"  (Just "Zoom to fit") (Just stockZoomFit)
-  next <- actionNew "NEXT" "Next"  (Just "Next") (Just stockMediaNext)
-  prev <- actionNew "PREV" "Previous"  (Just "Previous") (Just stockMediaPrevious)
   hlpa <- actionNew "HLPA" "Help"  (Just "Help") (Just stockHelp)
 
   agr <- actionGroupNew "AGR"
@@ -147,11 +139,6 @@ renderWindow opt ctxs = do
     [expp,expt,zooi,zooo,zoof,hlpa]
 
   actionGroupAddActionWithAccel agr exia (Just "<Control>e")
-
-  actionGroupAddActionWithAccel np next Nothing
-  actionGroupAddActionWithAccel np prev Nothing
-
-  when (length ctxs <= 1) (actionGroupSetSensitive np False)
 
   ui <- uiManagerNew
   uiManagerAddUiFromString ui uiStd
@@ -170,55 +157,55 @@ renderWindow opt ctxs = do
         Nothing -> error "Cannot get toolbar from string."
   boxPackStart box toolbar PackNatural 0
 
-  -- Create the drawing area, options need to update it
-  canvas <- drawingAreaNew
+  -- Main interface
 
-  -- Create a hbox for options and drawing
+  -- === Splitpane === --
   hpane <- hPanedNew
-
-  --hbox <- hBoxNew False 0
   boxPackStart box hpane PackGrow 0
 
-  sidebox <- vBoxNew False 0
-  --boxPackStart hbox sidebox PackNatural 0
-  
-  scrwin <- scrolledWindowNew Nothing Nothing
-  scrolledWindowSetPolicy scrwin PolicyNever PolicyAutomatic
-  scrolledWindowAddWithViewport scrwin sidebox
+  -- === Status Bar === --
+  statusBar <- statusbarNew
+  boxPackStart box statusBar PackNatural 0
 
-  containerAdd hpane scrwin
-  
-  --containerAdd hpane sidebox
+  -- === Left side of pane === --
+  -- Placeholder filled later
+  sidebox <- vBoxNew False 0  
+  scrwinL <- scrolledWindowNew Nothing Nothing
+  scrolledWindowSetPolicy scrwinL PolicyNever PolicyAutomatic
+  scrolledWindowAddWithViewport scrwinL sidebox
 
+  -- === Main canvas === ---
+
+   -- The display widgets
+  scrwinR <- scrolledWindowNew Nothing Nothing
+  scrolledWindowSetPolicy scrwinR PolicyAutomatic PolicyAutomatic
+
+  canvas <- drawingAreaNew
+
+  align <- alignmentNew 0.5 0.5 0 0
+  containerAdd align canvas
+
+  scrolledWindowAddWithViewport scrwinR align
+
+  widgetSetSizeRequest canvas baseSize (heightInRatio ctx baseSize)
+
+  -- Setup the pane
+  frameL <- frameNew
+  frameSetShadowType frameL ShadowNone
+  containerAdd frameL scrwinL
+
+  frameR <- frameNew
+  frameSetShadowType frameR ShadowNone
+  containerAdd frameR scrwinR
+
+  containerAdd hpane frameL
+  containerAdd hpane frameR
+  panedSetPosition hpane 150
+
+  -- === Option ui === --
   -- Create the label and option widgets
   opt <- optionToUI canvas opt stateRef
-
-  label <- labelNew (Just firstContext)
-  boxPackStart sidebox label PackNatural 10
-
   boxPackStart sidebox opt PackGrow 10
-
-  -- The display widgets
-  scrwin <- scrolledWindowNew Nothing Nothing
-  scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic
-  -- boxPackStart hbox scrwin PackGrow 0
-  containerAdd hpane scrwin
-
-  oframe <- aspectFrameNew 0.5 0.5 (Just 1)
-
-  frameSetShadowType oframe ShadowNone
-
-  fixed <- fixedNew
-  frame <- aspectFrameNew 0.5 0.5 (Just 1)
-
-  fixedPut fixed frame (0,0)
-  containerAdd oframe fixed
-
-  scrolledWindowAddWithViewport scrwin oframe
-
-
-  containerAdd frame canvas
-  widgetSetSizeRequest canvas 400 400
 
   -- Show the window
   widgetShowAll window
@@ -228,16 +215,16 @@ renderWindow opt ctxs = do
                     do (w,h) <- widgetGetSize canvas
                        drawin <- widgetGetDrawWindow canvas
                        state <- readIORef stateRef
-                       let f = cairo (rcs Map.! currentContext state)
+                       let f = cairo ctx
                        fig <- f (curOptions state) (fromIntegral w)  (fromIntegral h)
                        renderWithDrawable drawin
                          (do Cairo.setSourceRGB 1.0 1.0 1.0
                              let dw = (fromIntegral w)
                                  dh = (fromIntegral h)
                              Cairo.moveTo 0 0
-                             Cairo.lineTo 0 dw
+                             Cairo.lineTo 0 dh
                              Cairo.lineTo dw dh
-                             Cairo.lineTo dh 0
+                             Cairo.lineTo dw 0
                              Cairo.closePath
                              Cairo.fill
                              fig)
@@ -260,7 +247,10 @@ renderWindow opt ctxs = do
 
   onActionActivate zoof
     (do state <- readIORef stateRef
-        let zf = 1
+        (w,h) <- widgetGetSize scrwinR
+        let zw = (fromIntegral w-10)/(fromIntegral baseSize) 
+        let zh = (fromIntegral h-10)/(fromIntegral (heightInRatio ctx baseSize)) 
+        let zf = min zw zh
         writeIORef stateRef (state { zoomFactor = zf})
         resizeFrame canvas stateRef)
 
@@ -279,11 +269,14 @@ renderWindow opt ctxs = do
                                     Nothing -> return ()
                                     Just path ->
                                       do state <- readIORef stateRef
-                                         let f = cairo (rcs Map.! currentContext state)
-                                         fig <- f (curOptions state) 500 500
+                                         let f = cairo ctx
+                                             w = (zoomFactor state)*
+                                                 (fromIntegral baseSize)
+                                             h =  fromIntegral (heightInRatio ctx $ round w)
+                                         fig <- f (curOptions state) w h
                                          (Cairo.withPDFSurface path
-                                          (realToFrac 500)
-                                          (realToFrac 500)
+                                          (realToFrac w)
+                                          (realToFrac h)
                                           (`Cairo.renderWith` fig))
           ResponseDeleteEvent -> return ()
         widgetDestroy fchdal)
@@ -303,51 +296,22 @@ renderWindow opt ctxs = do
                                     Nothing -> return ()
                                     Just path ->
                                       do state <- readIORef stateRef
-                                         let t = tikz (rcs Map.! currentContext state)
+                                         let t = tikz ctx
                                          fig <- (t (curOptions state))
                                          writeFile path fig
           ResponseDeleteEvent -> return ()
         widgetDestroy fchdal)
 
-  onActionActivate next
-    (do state <- readIORef stateRef
-        let cur = currentContext state
-        let maybeidx = findIndex (\(a,b) -> a == cur) ctxs
-        writeIORef stateRef
-          (state { currentContext = case maybeidx of
-                      Nothing -> fst $ head ctxs
-                      Just idx -> if (idx+1) >= length ctxs then
-                                    cur
-                                  else fst $ ctxs !! (idx + 1) })
-        nstate <- readIORef stateRef
-        labelSetText label (currentContext nstate)
-        widgetQueueDraw canvas)
-
-  onActionActivate prev
-    (do state <- readIORef stateRef
-        let cur = currentContext state
-        let maybeidx = findIndex (\(a,b) -> a == cur) ctxs
-        writeIORef stateRef
-          (state { currentContext = case maybeidx of
-                      Nothing -> fst $ head ctxs
-                      Just idx -> if (idx-1) < 0 then
-                                    cur
-                                  else fst $ ctxs !! (idx - 1) })
-        nstate <- readIORef stateRef
-        labelSetText label (currentContext nstate)
-        widgetQueueDraw canvas)
-
   return window
   where resizeFrame canvas stateRef =
           do state <- readIORef stateRef
              let zf = (zoomFactor state)
-             widgetSetSizeRequest canvas (ceiling $ 400*zf) (ceiling $ 400*zf)
+                 w = ceiling $ (fromIntegral baseSize)*zf
+             widgetSetSizeRequest canvas w (heightInRatio ctx w)
 
 optionToUI :: DrawingArea -> [(String,Option)] -> IORef State -> IO VBox
 optionToUI canvas opt stateRef = do
     box <- vBoxNew False 0
-    sep     <- hSeparatorNew
-    boxPackStart box sep PackNatural 8
     label1 <- labelNew (Just "Options:")
     boxPackStart box label1 PackNatural 5
     sep2     <- hSeparatorNew
@@ -462,9 +426,6 @@ createOption canvas stateRef box (lbl, opt) =
 
 
 
-
-
-
 uiStd =  "<ui>\
 \           <menubar>\
 \            <menu action=\"FMA\">\
@@ -481,9 +442,6 @@ uiStd =  "<ui>\
 \            <toolitem action=\"ZOOI\" />\
 \            <toolitem action=\"ZOOO\" />\
 \            <toolitem action=\"ZOOF\" />\
-\            <separator />\
-\            <toolitem action=\"PREV\" />\
-\            <toolitem action=\"NEXT\" />\
 \            <separator />\
 \            <toolitem action=\"EXPP\" />\
 \            <toolitem action=\"EXPT\" />\
