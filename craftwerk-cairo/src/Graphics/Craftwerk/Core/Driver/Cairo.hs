@@ -116,6 +116,7 @@ figureToRenderContextWithStyle (Text s) = ask >>= \c ->
                         Cairo.setMatrix (strokeMatrix c)
                         Cairo.stroke
                         Cairo.restore)
+                  Cairo.restore
 
 figureToRenderContextWithStyle (Path a) = ask >>= \c ->
   let sp = getProperty $ styleP c
