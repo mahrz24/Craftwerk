@@ -18,6 +18,7 @@ module Graphics.Craftwerk.Core.Color
 import Data.Colour.SRGB
 import Data.Colour.Names
 
+
 -- | The colour type used by Craftwerk
 type FigureColor = Colour Double
 

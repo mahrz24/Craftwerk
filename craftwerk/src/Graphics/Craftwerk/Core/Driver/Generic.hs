@@ -8,6 +8,8 @@
 -- primitives such that drivers only need to implement basic
 -- functionalities.
 
+
+
 module Graphics.Craftwerk.Core.Driver.Generic (
   -- * Internal conversion to simpler primitives
   genericLevel2Figure
@@ -27,6 +29,7 @@ import Data.VectorSpace
 genericLevel2Figure :: Figure -> Figure
 genericLevel2Figure (Circle (x,y) r) =
   Path [ArcSegment (x+r,y) 0 360  r]
+
 
 genericLevel2Figure (Grid (x,y) xs ys) =
   composition $
@@ -96,4 +99,3 @@ radians n = n / (360 / (2 * pi))
 -- | Angle conversion
 degree :: (Floating a) => a -> a
 degree n = n / ((2*pi) / 360)
-

@@ -51,21 +51,21 @@ figureToRenderContextWithStyle (Style ns a) =
   figureToRenderContextWithStyle a
 
 
-figureToRenderContextWithStyle (Transform (Rotate r) a) = 
-  local (\c -> 
+figureToRenderContextWithStyle (Transform (Rotate r) a) =
+  local (\c ->
           c { decorationsRotation = (decorationsRotation c) + r}) $
   do
     lift $ Cairo.save >> Cairo.rotate (radians r)
     figureToRenderContextWithStyle a
     lift Cairo.restore
 
-figureToRenderContextWithStyle (Transform (Translate p) a) =   
+figureToRenderContextWithStyle (Transform (Translate p) a) =
   do
     lift $ Cairo.save >> fnC Cairo.translate p
     figureToRenderContextWithStyle a
     lift Cairo.restore
-    
-figureToRenderContextWithStyle (Transform (Scale p) a) = 
+
+figureToRenderContextWithStyle (Transform (Scale p) a) =
   do
     lift $ Cairo.save >> fnC Cairo.scale p
     figureToRenderContextWithStyle a
@@ -81,11 +81,11 @@ figureToRenderContextWithStyle (Composition a) =
 figureToRenderContextWithStyle (Decoration p a) =
   local (\c -> c { noDecorations = True
                  }) $ ask >>= \c ->
-  do lift $ do Cairo.save 
+  do lift $ do Cairo.save
                curm <- (Cairo.getMatrix)
                let dec = (decorationsRotation c)
                    ini = (initialMatrix c)
-                   dorigin = Matrix.transformPoint 
+                   dorigin = Matrix.transformPoint
                              ((Matrix.invert ini)*(curm)) (0,0)
                Cairo.setMatrix (ini)
                fnC Cairo.translate dorigin
@@ -116,7 +116,7 @@ figureToRenderContextWithStyle (Text s) = ask >>= \c ->
                         Cairo.setMatrix (strokeMatrix c)
                         Cairo.stroke
                         Cairo.restore)
-     
+
 figureToRenderContextWithStyle (Path a) = ask >>= \c ->
   let sp = getProperty $ styleP c
   in do lift $ do when (sp clip) (do cairoPath a sp
@@ -139,7 +139,7 @@ figureToRenderContextWithStyle (Path a) = ask >>= \c ->
                         Cairo.restore)
         -- Avoid running into a deadlock when rendering arrow tips
         unless (noDecorations c)
-          (figureToRenderContextWithStyle $ 
+          (figureToRenderContextWithStyle $
            arrowTipsForPath a (sp lineWidth) (sp arrowTips))
 
 

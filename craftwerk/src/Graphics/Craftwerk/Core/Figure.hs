@@ -75,7 +75,7 @@ data Figure = Blank
             | Text String
             | Decoration Point Figure
             deriving (Show, Eq)
-
+                     
 data Transform = Rotate Double
                | Scale Vector
                | Translate Vector
