@@ -18,6 +18,8 @@ module Graphics.Craftwerk.UI.Gtk (
   , displayRender
   , renderWindow
 
+  , choice
+
   ) where
 
 import Graphics.UI.Gtk hiding (Socket)
@@ -70,7 +72,6 @@ type Options = [Option]
 packSocket :: SocketC a => a -> Option
 packSocket = MakeOption
 
-
 option :: OptionUI -> IORef a -> Option
 option ifc ref = packSocket Socket { interface_ = ifc 
                                     , value = ref}
@@ -80,12 +81,53 @@ type OptionWriter a = IO (Writer [Option] (IORef a))
 choice :: String -> [String] -> OptionWriter String
 choice lbl choices =
     do ref <- newIORef (head choices)
-       tell option (choiceUI lbl choices ref) ref
-       return ref
+       return $ do tell [(option (choiceUI lbl choices ref) ref)]
+                   return ref
 
-choiceUI :: String -> [String] -> IORef String -> OptionUI
-choiceUI = undefined 
+choiceUI :: WidgetClass widget => String 
+         -> [String] 
+         -> IORef String 
+         -> widget
+         -> IO HBox
+choiceUI lbl choices ref updateWidget = 
+    do hbox <- hBoxNew False 0
+       
+       label <- labelNew (Just lbl)
+       boxPackStart hbox label PackNatural 10
+       
+       list <- listStoreNew choices
+       treeview <- treeViewNewWithModel list
 
+       tvc <- treeViewColumnNew
+       treeViewColumnSetTitle tvc lbl
+
+       renderer <- cellRendererTextNew
+       cellLayoutPackStart tvc renderer False
+       cellLayoutSetAttributes tvc renderer list
+                                   (\ind -> [cellText := ind])
+       treeViewAppendColumn treeview tvc
+
+       tree <- treeViewGetSelection treeview
+       treeSelectionSetMode tree SelectionSingle
+       treeSelectionSelectPath tree [0]
+
+       scrwin <- scrolledWindowNew Nothing Nothing
+       scrolledWindowSetPolicy scrwin PolicyNever PolicyAutomatic
+       containerAdd scrwin treeview
+
+       frame <- frameNew
+       containerAdd frame scrwin
+
+       boxPackStart hbox frame PackGrow 10
+
+       onSelectionChanged tree $ do 
+         sel <- treeSelectionGetSelectedRows tree
+         state <- readIORef ref
+         writeIORef ref (choices !! (head $ head sel))
+         widgetQueueDraw updateWidget
+         return ()
+
+       return hbox
 
 -- | Display a render context in a Gtk window, starts the Gtk main loop.
 -- The first argument contains a list of named options whose UI values
@@ -195,7 +237,7 @@ renderWindow opt title ctx = do
 
   -- === Option ui === --
   -- Create the label and option widgets
-  optUI <- optionToUI canvas opt
+  optUI <- optionsToUI canvas opt
   boxPackStart sidebox optUI PackGrow 10
 
   -- Show the window
@@ -287,8 +329,8 @@ contextCanvas ctx =
                  Cairo.fill
                  fig
 
-optionToUI :: DrawingArea -> Options -> IO VBox
-optionToUI canvas opt = do
+optionsToUI :: DrawingArea -> Options -> IO VBox
+optionsToUI canvas opt = do
     box <- vBoxNew False 0
     label1 <- labelNew (Just "Options:")
     boxPackStart box label1 PackNatural 5

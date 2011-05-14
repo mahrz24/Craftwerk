@@ -53,7 +53,8 @@ Executable example1
                      craftwerk,
                      craftwerk-cairo,
                      craftwerk-gtk,
-                     containers
+                     containers,
+                     mtl
   Main-Is:           Example1.hs
   if !flag(examples)
     Buildable:       False
