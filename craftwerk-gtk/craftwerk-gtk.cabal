@@ -43,7 +43,8 @@ Library
                      craftwerk >= 0.1 && < 0.2,
                      mtl
   Exposed-Modules:   Graphics.Craftwerk.UI,
-                     Graphics.Craftwerk.UI.Gtk
+                     Graphics.Craftwerk.UI.Gtk,
+                     Graphics.Craftwerk.UI.RenderContext
 
 Executable example1
   Hs-Source-Dirs:    examples
