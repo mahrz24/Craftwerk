@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification, MultiParamTypeClasses, FlexibleInstances, RankNTypes #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, ScopedTypeVariables, TypeFamilies #-}
 -- |
 -- Module      :  Graphics.Craftwerk.UI.Gtk
 -- Copyright   :  (c) Malte Harder 2011
@@ -10,143 +10,66 @@
 -- the figures that are displayed.
 
 module Graphics.Craftwerk.UI.Gtk (
-  -- * Data types
-    Option(..)
-
-    -- * Display figures
-  , renderFigure
-  , displayRender
-  , renderWindow
-
-  , choice
-
+  
+  module Graphics.Craftwerk.UI.TV
   ) where
 
-import Graphics.UI.Gtk hiding (Socket)
+import Graphics.Craftwerk.UI.TV
+
+import Graphics.UI.Gtk
 import qualified Graphics.Rendering.Cairo as Cairo
 
 import Graphics.Craftwerk.Core.Driver.Cairo
-import Graphics.Craftwerk.Core.Driver.Tikz
-import Graphics.Craftwerk.Core.Figure
+import Graphics.Craftwerk.Core
 
-import Graphics.Craftwerk.UI.RenderContext
+import Control.Applicative (liftA2,(<$>),(<*>),(<$))
+import Control.Monad (when,join)
 
-import Data.IORef
 import qualified Data.Map as Map
-import Data.List
-
-import Control.Monad
-import Control.Monad.Trans
-import Control.Monad.Writer
+import Data.IORef
+import Data.Word
 
 import Text.Printf
 
--- Put the export functions into 
--- Graphics.UI.RenderContext
--- Write function that creates the canvas and returns an ioref to the state
--- Remove all options as they are now
--- Option is a widget + ioref
+in1 = sliderIIn (0,5) 1
+in2 = sliderIIn (0,5) 1
 
-data State = State { canvasWidth :: Double }
+pinski :: GTV (Colour Double -> Int -> Figure)
+pinski = tv 
+         (oTitle "Sierpinski Triangle" $ 
+          oLambda (iTitle "Color" defaultIn) (oLambda (iTitle "Iterations" in1) (figureOut 2.0 1.0)) ) tpair
 
--- | Describing options for a user interface.
+tpair col i = colorStyle col $ iterations i $ triangle
 
-type OptionUI = WidgetClass widget => widget -> IO HBox
+colorStyle col = style newStyle { closePath = yes
+                                , fillColor = Just col
+                                , stroke = no
+                                , fill = yes}
 
-data Socket a = Socket { interface_ :: OptionUI
-                       , value :: IORef a }
+triangle = line [(0,0),(0,1),(1,0)]
 
-class SocketC s  where
-    interface :: s -> OptionUI
+iterations :: Int -> Figure -> Figure
+iterations 0 f = f
+iterations i f =
+  let nf = iterations (i-1) f
+  in scale (0.5,0.5) $ composition
+     [
+       translate (0,1) $ nf
+     , translate (0,0) $ nf
+     , translate (1,0) $ nf
+     ]
 
-instance SocketC (Socket a) where
-    interface s = interface_ s
+-- Create an interface for GTV
 
-data Option = forall a . SocketC a => MakeOption a
-
-instance SocketC Option where
-    interface (MakeOption a) = interface a
-
-type Options = [Option]
-
-packSocket :: SocketC a => a -> Option
-packSocket = MakeOption
-
-option :: OptionUI -> IORef a -> Option
-option ifc ref = packSocket Socket { interface_ = ifc 
-                                    , value = ref}
-
-type OptionWriter a = IO (Writer [Option] (IORef a))
-
-choice :: String -> [String] -> OptionWriter String
-choice lbl choices =
-    do ref <- newIORef (head choices)
-       return $ do tell [(option (choiceUI lbl choices ref) ref)]
-                   return ref
-
-choiceUI :: WidgetClass widget => String 
-         -> [String] 
-         -> IORef String 
-         -> widget
-         -> IO HBox
-choiceUI lbl choices ref updateWidget = 
-    do hbox <- hBoxNew False 0
-       
-       label <- labelNew (Just lbl)
-       boxPackStart hbox label PackNatural 10
-       
-       list <- listStoreNew choices
-       treeview <- treeViewNewWithModel list
-
-       tvc <- treeViewColumnNew
-       treeViewColumnSetTitle tvc lbl
-
-       renderer <- cellRendererTextNew
-       cellLayoutPackStart tvc renderer False
-       cellLayoutSetAttributes tvc renderer list
-                                   (\ind -> [cellText := ind])
-       treeViewAppendColumn treeview tvc
-
-       tree <- treeViewGetSelection treeview
-       treeSelectionSetMode tree SelectionSingle
-       treeSelectionSelectPath tree [0]
-
-       scrwin <- scrolledWindowNew Nothing Nothing
-       scrolledWindowSetPolicy scrwin PolicyNever PolicyAutomatic
-       containerAdd scrwin treeview
-
-       frame <- frameNew
-       containerAdd frame scrwin
-
-       boxPackStart hbox frame PackGrow 10
-
-       onSelectionChanged tree $ do 
-         sel <- treeSelectionGetSelectedRows tree
-         state <- readIORef ref
-         writeIORef ref (choices !! (head $ head sel))
-         widgetQueueDraw updateWidget
-         return ()
-
-       return hbox
-
--- | Display a render context in a Gtk window, starts the Gtk main loop.
--- The first argument contains a list of named options whose UI values
--- are passed to the render context.
-displayRender :: Options -> RenderContext -> IO ()
-displayRender opt r = do
+runGTVInWindow :: String -> GTV a -> IO ()
+runGTVInWindow name f = do
   initGUI
-  window <- renderWindow opt "Render View" r
-  widgetShowAll window
-  onDestroy window mainQuit
-  mainGUI
-
--- | Same as 'displayMultiple' except that the Gtk main loop is not started or
--- initialized. The window is not visible upon return.
-renderWindow :: Options -> String ->  RenderContext -> IO Window
-renderWindow opt title ctx = do
   window <- windowNew
-  set window [windowTitle := title,
-              windowDefaultWidth := 640, windowDefaultHeight := 480]
+
+  set window [windowTitle := name
+             , windowDefaultWidth := 640
+             , windowDefaultHeight := 480
+             ]
 
   -- The box layout
   box <- vBoxNew False 0
@@ -156,12 +79,7 @@ renderWindow opt title ctx = do
   fma <- actionNew "FMA" "File" Nothing Nothing
   hma <- actionNew "HMA" "Help" Nothing Nothing
 
-  expp <- actionNew "EXPP" "Export as PDF..."     (Just "Export as PDF") (Just stockConvert)
-  expt <- actionNew "EXPT" "Export as TikZ..."    (Just "Export as TikZ") (Just stockDnd)
   exia <- actionNew "EXIA" "Close"    (Just "Close") (Just stockQuit)
-  zooi <- actionNew "ZOOI" "Zoom in"  (Just "Zoom in") (Just stockZoomIn)
-  zooo <- actionNew "ZOOO" "Zoom out"  (Just "Zoom out") (Just stockZoomOut)
-  zoof <- actionNew "ZOOF" "Zoom to fit"  (Just "Zoom to fit") (Just stockZoomFit)
   hlpa <- actionNew "HLPA" "Help"  (Just "Help") (Just stockHelp)
 
   agr <- actionGroupNew "AGR"
@@ -169,7 +87,7 @@ renderWindow opt title ctx = do
 
   mapM_ (actionGroupAddAction agr) [fma, hma]
   mapM_ (\ act -> actionGroupAddActionWithAccel agr act Nothing)
-    [expp,expt,zooi,zooo,zoof,hlpa]
+    [hlpa]
 
   actionGroupAddActionWithAccel agr exia (Just "<Control>e")
 
@@ -184,288 +102,197 @@ renderWindow opt title ctx = do
         Nothing -> error "Cannot get menubar from string."
   boxPackStart box menubar PackNatural 0
 
-  maybeToolbar <- uiManagerGetWidget ui "/ui/toolbar"
-  let toolbar = case maybeToolbar of
-        (Just x) -> x
-        Nothing -> error "Cannot get toolbar from string."
-  boxPackStart box toolbar PackNatural 0
-
-  -- Main interface
 
   -- === Splitpane === --
-  hpane <- hPanedNew
-  boxPackStart box hpane PackGrow 0
+  wid <- runGTVInWidget f
+  boxPackStart box wid PackGrow 0
 
   -- === Status Bar === --
   statusBar <- statusbarNew
   boxPackStart box statusBar PackNatural 0
 
-  -- === Left side of pane === --
-  -- Placeholder filled later
-  sidebox <- vBoxNew False 0  
-  scrwinL <- scrolledWindowNew Nothing Nothing
-  scrolledWindowSetPolicy scrwinL PolicyNever PolicyAutomatic
-  scrolledWindowAddWithViewport scrwinL sidebox
-
-  -- === Main canvas === ---
-
-   -- The display widgets
-  scrwinR <- scrolledWindowNew Nothing Nothing
-  scrolledWindowSetPolicy scrwinR PolicyAutomatic PolicyAutomatic
-
-  (canvas, stateRef) <- contextCanvas ctx
-
-  align <- alignmentNew 0.5 0.5 0 0
-  containerAdd align canvas
-
-  scrolledWindowAddWithViewport scrwinR align
-
-  widgetSetSizeRequest canvas 400 (heightForWidth ctx 400)
-
-  -- Setup the pane
-  frameL <- frameNew
-  frameSetShadowType frameL ShadowNone
-  containerAdd frameL scrwinL
-
-  frameR <- frameNew
-  frameSetShadowType frameR ShadowNone
-  containerAdd frameR scrwinR
-
-  containerAdd hpane frameL
-  containerAdd hpane frameR
-  panedSetPosition hpane 230
-
-  -- === Option ui === --
-  -- Create the label and option widgets
-  optUI <- optionsToUI canvas opt
-  boxPackStart sidebox optUI PackGrow 10
-
-  -- Show the window
-  widgetShowAll window
-
-  -- Menu event actions
+    -- Menu event actions
   onActionActivate exia (widgetDestroy window)
-
-  onActionActivate zooi
-    (do state <- readIORef stateRef
-        let zf = 1.5 * canvasWidth state
-        writeIORef stateRef (state { canvasWidth = zf})
-        resizeFrame canvas stateRef)
-
-  onActionActivate zooo
-    (do state <- readIORef stateRef
-        let zf = 0.75 * canvasWidth state
-        writeIORef stateRef (state { canvasWidth = zf})
-        resizeFrame canvas stateRef)
-
-  onActionActivate zoof 
-                       (zoomCanvasToFit canvas scrwinR stateRef)
-    
-  onActionActivate expp 
-                       (exportToFile "Export As PDF..." 
-                                     saveContextAsPDF stateRef)
-
-  onActionActivate expt 
-                       (exportToFile "Export As TikZ..." 
-                                     saveContextAsTikZ stateRef)
-
-  return window
-
-  where resizeFrame canvas stateRef =
-            do state <- readIORef stateRef
-               let w = ceiling (canvasWidth state)
-               widgetSetSizeRequest canvas w (heightForWidth ctx w)
-        zoomCanvasToFit canvas scrwinR stateRef =
-            do state <- readIORef stateRef
-               (w,h) <- widgetGetSize scrwinR
-               let zf = min (fromIntegral w-10) (fromIntegral h-10)
-               writeIORef stateRef (state { canvasWidth = zf})
-               resizeFrame canvas stateRef
-        exportToFile prompt exporter stateRef = 
-            do fchdal <- fileChooserDialogNew (Just prompt) Nothing
-                         FileChooserActionSave
-                             [("Cancel", ResponseCancel),
-                              ("Export", ResponseAccept)]
-               fileChooserSetDoOverwriteConfirmation fchdal True
-               widgetShow fchdal
-               response <- dialogRun fchdal
-               case response of
-                 ResponseCancel -> 
-                     return ()
-                 ResponseAccept -> 
-                     do nwf <- fileChooserGetFilename fchdal
-                        case nwf of
-                          Nothing -> return ()
-                          Just path ->
-                             do state <- readIORef stateRef
-                                let w = (canvasWidth state)
-                                exporter ctx w path
-                 ResponseDeleteEvent -> return ()
-               widgetDestroy fchdal
-
-
-contextCanvas ctx =
-    do canvas <- drawingAreaNew
-       stateRef <- newIORef State { canvasWidth = 400 }
-       onExpose canvas (drawFigure canvas stateRef)
-       return (canvas,stateRef)
-    where drawFigure canvas stateRef x =
-              do (w,h) <- widgetGetSize canvas
-                 drawin <- widgetGetDrawWindow canvas
-                 state <- readIORef stateRef
-                 let f = cairo ctx
-                 fig <- f (fromIntegral w) (fromIntegral h)
-                 renderWithDrawable drawin (renderFig fig w h)
-                 return True
-          renderFig fig w h =
-              do Cairo.setSourceRGB 1.0 1.0 1.0
-                 let dw = (fromIntegral w)
-                     dh = (fromIntegral h)
-                 Cairo.moveTo 0 0
-                 Cairo.lineTo 0 dh
-                 Cairo.lineTo dw dh
-                 Cairo.lineTo dw 0
-                 Cairo.closePath
-                 Cairo.fill
-                 fig
-
-optionsToUI :: DrawingArea -> Options -> IO VBox
-optionsToUI canvas opt = do
-    box <- vBoxNew False 0
-    label1 <- labelNew (Just "Options:")
-    boxPackStart box label1 PackNatural 5
-    mapM_ (\ow -> do hbox <- interface ow $ canvas
-                     boxPackStart box hbox PackNatural 0) opt
-    return box
-
--- createOption :: DrawingArea -> IORef State -> VBox -> (String,Option) -> IO ()
--- createOption canvas stateRef box (lbl, opt) =
---   do hbox <- hBoxNew False 0
-
---      case opt of
---        ChoiceOption _ _ -> boxPackStart box hbox PackGrow 5
---        _ -> do boxPackStart box hbox PackNatural 5
---                label <- labelNew (Just lbl)
---                boxPackStart hbox label PackNatural 10
---      case opt of
---        NumberOption def ->
---          do field <- entryNew
---             entrySetText field $ printf "%f" def
---             boxPackStart hbox field PackGrow 10
---             onEntryActivate field (
---               do state <- readIORef stateRef
---                  txt <- entryGetText field
---                  writeIORef stateRef
---                    (state { curOptions =
---                                Map.update (const $ Just $ NumberOption (read txt))
---                                lbl
---                                (curOptions state)
---                           })
---                  widgetQueueDraw canvas
---                  return ())
---             return ()
---        RangeOption min max step def ->
---          do adj <- adjustmentNew def min max  step (step*10) 0.0
---             scl <- spinButtonNew adj 0.5 4
---             boxPackStart hbox scl PackGrow 10
---             onValueChanged adj (
---               do state <- readIORef stateRef
---                  val <- adjustmentGetValue adj
---                  writeIORef stateRef
---                    (state { curOptions =
---                                Map.update (const $ Just $ NumberOption val)
---                                lbl
---                                (curOptions state)
---                           })
---                  widgetQueueDraw canvas
---                  return ())
---             return ()
---        BoolOption def ->
---          do btn <- checkButtonNew
---             toggleButtonSetActive btn def
---             boxPackStart hbox btn PackNatural 10
---             onToggled btn (
---               do state <- readIORef stateRef
---                  val <- toggleButtonGetActive btn
---                  writeIORef stateRef
---                    (state { curOptions =
---                                Map.update (const $ Just $ BoolOption val)
---                                lbl
---                                (curOptions state)
---                           })
---                  widgetQueueDraw canvas
---                  return ())
---             return ()
---        ChoiceOption choices def ->
---          do list <- listStoreNew choices
---             treeview <- treeViewNewWithModel list
-
---             tvc <- treeViewColumnNew
---             treeViewColumnSetTitle tvc lbl
-
---             renderer <- cellRendererTextNew
---             cellLayoutPackStart tvc renderer False
---             cellLayoutSetAttributes tvc renderer list
---               (\ind -> [cellText := ind])
---             treeViewAppendColumn treeview tvc
-
---             tree <- treeViewGetSelection treeview
---             treeSelectionSetMode tree SelectionSingle
---             treeSelectionSelectPath tree [0]
-
---             scrwin <- scrolledWindowNew Nothing Nothing
---             scrolledWindowSetPolicy scrwin PolicyNever PolicyAutomatic
---             containerAdd scrwin treeview
-
---             frame <- frameNew
---             containerAdd frame scrwin
-
---             boxPackStart hbox frame PackGrow 10
-
---             onSelectionChanged tree (
---               do sel <- treeSelectionGetSelectedRows tree
---                  state <- readIORef stateRef
---                  let val = head $ head sel
---                  let c = [] --choices $ (curOptions state) Map.! lbl
---                  writeIORef stateRef
---                    (state { curOptions =
---                                Map.update (const $ Just $ ChoiceOption c val)
---                                lbl
---                                (curOptions state)
---                           })
---                  widgetQueueDraw canvas
---                  return ()
---               )
-
-
---             return ()
-
---      sep     <- hSeparatorNew
---      boxPackStart box sep PackNatural 0
-
-
-
+  
+  onDestroy window (mainQuit)
+  
+  widgetShowAll window
+  mainGUI
+  return ()
+  
 uiStd =  "<ui>\
 \           <menubar>\
 \            <menu action=\"FMA\">\
-\              <menuitem action=\"EXPP\" />\
-\              <menuitem action=\"EXPT\" />\
-\              <separator />\
 \              <menuitem action=\"EXIA\" />\
 \            </menu>\
 \            <menu action=\"HMA\">\
 \              <menuitem action=\"HLPA\" />\
 \            </menu>\
 \           </menubar>\
-\           <toolbar>\
-\            <toolitem action=\"ZOOI\" />\
-\            <toolitem action=\"ZOOO\" />\
-\            <toolitem action=\"ZOOF\" />\
-\            <separator />\
-\            <toolitem action=\"EXPP\" />\
-\            <toolitem action=\"EXPT\" />\
-\            <separator />\
-\            <toolitem action=\"HLPA\" />\
-\           </toolbar>\
 \          </ui>"
+
+instance (Ord a, Floating a) => DefaultIn MkI (Colour a) where defaultIn = colorIn black
+
+getRed :: Fractional a => Color -> a
+getRed (Color r g b) = (fromIntegral r) / (65536)
+
+getGreen :: Fractional a => Color -> a
+getGreen (Color r g b) = (fromIntegral g) / (65536)
+
+getBlue :: Fractional a => Color -> a
+getBlue (Color r g b) = (fromIntegral b) / (65536)
+
+convertC c = sRGB (getRed c) (getGreen c) (getBlue c)
+
+colorIn :: (Ord a, Floating a) => (Colour a) -> In (Colour a)
+colorIn a0 = 
+  primMkI $
+  do oldRef <- newIORef a0
+     w <- colorButtonNewWithColor (Color 0 0 0)
+     let getter = 
+           do c <- colorButtonGetColor w
+              return $ convertC c
+         install refresh = forget $ afterColorSet w
+                               (do c <- colorButtonGetColor w
+                                   changeTo (convertC c) 
+                                   return ())
+          where
+            changeTo new =
+              do old <- readIORef oldRef
+                 when (old /= new) $
+                      do refresh
+                         writeIORef oldRef new
+     return (toWidget w, getter, return (), install)
+
+instance DefaultOut MkI MkO Figure where defaultOut = figureOut 1.0 1.0
+
+figureOut :: Double -> Double -> Out Figure
+figureOut cw ch = 
+  primMkO $ 
+  do 
+    figureRef <- newIORef blank
+    scrwinR <- scrolledWindowNew Nothing Nothing
+   
+   
+    scrolledWindowSetPolicy scrwinR PolicyAutomatic PolicyAutomatic
+
+    canvas <- drawingAreaNew
+    
+    let aspectRatio w = round $ (fromIntegral w) * ch/cw
+    let aspectRatio' h = round $ (fromIntegral h) * cw/ch
+    widgetSetSizeRequest canvas 400 (aspectRatio 400)
+    
+    align <- alignmentNew 0.5 0.5 0 0
+    containerAdd align canvas
+    
+    scrolledWindowAddWithViewport scrwinR align
+
+    btnbox <- hButtonBoxNew
+    zibtn <- buttonNewFromStock stockZoomIn
+    containerAdd btnbox zibtn
+    
+    onClicked zibtn (do
+                        (w,h) <- widgetGetSize canvas
+                        let nw = 2*w
+                        widgetSetSizeRequest canvas nw (aspectRatio nw)
+                    )
+    
+    zobtn <- buttonNewFromStock stockZoomOut
+    containerAdd btnbox zobtn
+    
+    onClicked zobtn (do
+                        (w,h) <- widgetGetSize canvas
+                        let nw = round $ (fromIntegral w)/2
+                        widgetSetSizeRequest canvas nw (aspectRatio nw)
+                    )
+
+    zfbtn <- buttonNewFromStock stockZoomFit
+    containerAdd btnbox zfbtn
+
+    onClicked zfbtn (do
+                        (w,h) <- widgetGetSize scrwinR
+                        let nw = w-10
+                            nh = h-10
+                        if (aspectRatio nw) < nh then
+                           widgetSetSizeRequest canvas nw (aspectRatio nw)
+                          else
+                          widgetSetSizeRequest canvas (aspectRatio nh) nh
+                    )
+
+    pdfbtn <- buttonNewWithLabel "Export as PDF..."
+    containerAdd btnbox pdfbtn
+    
+    onClicked pdfbtn 
+      (exportToFile "Export as PDF" (saveFigureAsPDF $ toWidget canvas) figureRef)
+
+    tikzbtn <- buttonNewWithLabel "Export as TikZ..."
+    containerAdd btnbox tikzbtn
+
+    onClicked tikzbtn 
+      (exportToFile "Export as TikZ" saveFigureAsTikZ figureRef)
+
+    vbox <- vBoxNew False 1
+    containerSetBorderWidth vbox 5
+    boxPackStart vbox btnbox PackNatural 0
+    boxPackStart vbox scrwinR PackGrow 5
+         
+    let display figure = 
+          do writeIORef figureRef figure
+             widgetQueueDraw canvas
+              
+    onExpose canvas $ \_ ->
+      do figure <- readIORef figureRef
+         drawin <- widgetGetDrawWindow canvas
+         (w,h) <- widgetGetSize canvas 
+         renderWithDrawable drawin (renderFig figure w h)
+         return True
+          
+    return (toWidget vbox, display, return ())
+  where renderFig fig w h =
+          do Cairo.setSourceRGB 1.0 1.0 1.0
+             let dw = (fromIntegral w)
+                 dh = (fromIntegral h)
+             Cairo.moveTo 0 0
+             Cairo.lineTo 0 dh
+             Cairo.lineTo dw dh
+             Cairo.lineTo dw 0
+             Cairo.closePath
+             Cairo.fill
+             figureToRenderContext . scale (dw/cw, -dh/ch) . translate (0,-ch) $ fig 
+        exportToFile prompt exporter figureRef = 
+          do fchdal <- fileChooserDialogNew (Just prompt) Nothing
+                       FileChooserActionSave
+                       [("Cancel", ResponseCancel),
+                        ("Export", ResponseAccept)]
+             fileChooserSetDoOverwriteConfirmation fchdal True
+             widgetShow fchdal
+             response <- dialogRun fchdal
+             case response of
+               ResponseCancel -> 
+                 return ()
+               ResponseAccept -> 
+                 do nwf <- fileChooserGetFilename fchdal
+                    case nwf of
+                      Nothing -> return ()
+                      Just path ->
+                        do fig <- readIORef figureRef
+                           exporter cw ch fig path
+               ResponseDeleteEvent -> return ()
+             widgetDestroy fchdal
+
+saveFigureAsPDF :: Widget -> Double -> Double -> Figure -> String -> IO ()
+saveFigureAsPDF c cw ch f filename =
+  do (w,h) <- widgetGetSize c
+     let dw = (fromIntegral w)
+         dh = (fromIntegral h)
+     (Cairo.withPDFSurface filename
+      (realToFrac dw)
+      (realToFrac dh)
+      (`Cairo.renderWith` 
+       (figureToRenderContext . scale (dw/cw, -dh/ch) . translate (0,-ch) $ f)))
+
+saveFigureAsTikZ :: Double -> Double -> Figure -> String -> IO ()
+saveFigureAsTikZ w h f filename = 
+  writeFile filename (figureToTikzPicture f)
+
 

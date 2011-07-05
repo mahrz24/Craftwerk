@@ -41,10 +41,14 @@ Library
                      containers >= 0.3 && < 0.5,
                      craftwerk-cairo >= 0.1 && < 0.2,
                      craftwerk >= 0.1 && < 0.2,
+                     TV,
+                     TypeCompose,
+                     vector-space,
+                     time,
                      mtl
   Exposed-Modules:   Graphics.Craftwerk.UI,
                      Graphics.Craftwerk.UI.Gtk,
-                     Graphics.Craftwerk.UI.RenderContext
+                     Graphics.Craftwerk.UI.TV
 
 Executable example1
   Hs-Source-Dirs:    examples
