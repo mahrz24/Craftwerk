@@ -9,9 +9,11 @@
 -- support the creation of a simple user interface to control parameters of
 -- the figures that are displayed.
 
-module Graphics.Craftwerk.UI.Gtk (
-  
-  module Graphics.Craftwerk.UI.TV
+module Graphics.Craftwerk.UI.Gtk 
+       ( runGTVInWindow
+       , colorIn
+       , figureOut
+       , module Graphics.Craftwerk.UI.TV
   ) where
 
 import Graphics.Craftwerk.UI.TV
