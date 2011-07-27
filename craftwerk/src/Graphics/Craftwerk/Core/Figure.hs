@@ -39,6 +39,8 @@ module Graphics.Craftwerk.Core.Figure (
 
     -- * Point generation
   , point
+  , pairToPoint
+  , origin
 
     -- * Path generation
   , lineToPath
@@ -49,8 +51,9 @@ module Graphics.Craftwerk.Core.Figure (
 import Graphics.Craftwerk.Core.Style
 import Graphics.Craftwerk.Core.Color
 import Data.Monoid
+import Data.Complex
 
-type Point = (Double,Double)
+type Point = Complex Double
 type Vector = Point
 
 -- | Path creation
@@ -75,7 +78,7 @@ data Figure = Blank
             | Text String
             | Decoration Point Figure
             deriving (Show, Eq)
-                     
+
 data Transform = Rotate Double
                | Scale Vector
                | Translate Vector
@@ -154,14 +157,20 @@ circle = Circle
 grid :: Vector -- ^ x,y
         -> Vector -- ^ xs,ys
         -> Figure
-grid v (x,y) = Grid v x y
+grid v (x :+ y) = Grid v x y
 
 -- | Generate a text at (0,0)
 text :: String -> Figure
 text = Text
 
+origin :: Point
+origin = 0 :+ 0
+
 point :: Double -> Double -> Point
-point x y = (x,y)
+point x y = x :+ y
+
+pairToPoint :: (Double, Double) -> Point
+pairToPoint (x,y) = point x y
 
 lineToPath :: Line -> Path
 lineToPath (p:ps) = MoveTo p:map LineSegment ps
@@ -170,8 +179,12 @@ lineToPath (p:ps) = MoveTo p:map LineSegment ps
 rectangle :: Point -- ^ Origin
              -> Vector -- ^ Extent
              -> Line
-rectangle (x,y) (w,h) = [(x,y),(x+w,y),(x+w,y+h),(x,y+h)]
+rectangle (x :+ y) (w :+ h) = [ x :+ y
+                              , (x+w) :+ y
+                              , (x+w) :+ (y+h)
+                              , x :+ (y+h)
+                              ]
 
 -- | Rectangle with origin (0,0) and extent (1,1)
 unitRectangle :: Line
-unitRectangle = rectangle (0,0) (1,1)
+unitRectangle = rectangle (0 :+ 0) (1 :+ 1)

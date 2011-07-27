@@ -4,7 +4,7 @@
 -- License     :  MIT
 -- Maintainer  :  Malte Harder <malte.harder@gmail.com>
 --
--- Convert a figure to a LaTeX TikZ 
+-- Convert a figure to a LaTeX TikZ
 -- (<http://sourceforge.net/projects/pgf/develop>) string.
 
 module Graphics.Craftwerk.Core.Driver.Tikz (
@@ -16,6 +16,8 @@ import Graphics.Craftwerk.Core.Figure
 import Graphics.Craftwerk.Core.Color
 import Graphics.Craftwerk.Core.Style
 
+import Data.Complex
+
 import Data.Maybe
 import Data.List
 import Text.Printf
@@ -23,7 +25,7 @@ import Text.Printf
 import Control.Monad
 import Control.Monad.Reader
 
-data Context = Context { styleP :: StyleProperties 
+data Context = Context { styleP :: StyleProperties
                        , fillDepth :: Int
                        , strokeDepth :: Int
                        , coordinateMatrix :: String
@@ -46,16 +48,16 @@ figureToTikzPicture f =
 figureToTikzPictureWithStyle :: Figure -> Reader Context String
 figureToTikzPictureWithStyle Blank = return ""
 
-figureToTikzPictureWithStyle (Style ns a) = 
+figureToTikzPictureWithStyle (Style ns a) =
   local (\c -> c { styleP = mergeProperties (styleP c) ns
                  , fillDepth = fillDepth c + maybeToInt (fillColor ns)
                  , strokeDepth = strokeDepth c + maybeToInt (lineColor ns)
                  }) (do c <- ask
-                        prependColor (scopePrefix (strokeDepth c) ++ "linec") 
-                          ns lineColor 
-                          $ prependColor (scopePrefix (fillDepth c) ++ "fillc") 
-                          ns fillColor 
-                          $ liftM (scope $ styleArguments ns) 
+                        prependColor (scopePrefix (strokeDepth c) ++ "linec")
+                          ns lineColor
+                          $ prependColor (scopePrefix (fillDepth c) ++ "fillc")
+                          ns fillColor
+                          $ liftM (scope $ styleArguments ns)
                           (figureToTikzPictureWithStyle a))
 
 
@@ -68,7 +70,7 @@ figureToTikzPictureWithStyle (Canvas (Rotate r) a) = ask >>= \c ->
     inverseCoordinateMatrix c))
   (figureToTikzPictureWithStyle a)
 
-figureToTikzPictureWithStyle (Canvas (Scale (x,y)) a) = ask >>= \c ->
+figureToTikzPictureWithStyle (Canvas (Scale (x :+ y)) a) = ask >>= \c ->
   liftM
   (emptyScope .
    (++)
@@ -78,7 +80,7 @@ figureToTikzPictureWithStyle (Canvas (Scale (x,y)) a) = ask >>= \c ->
     inverseCoordinateMatrix c))
   (figureToTikzPictureWithStyle a)
 
-figureToTikzPictureWithStyle (Canvas (Translate (x,y)) a) = ask >>= \c ->
+figureToTikzPictureWithStyle (Canvas (Translate (x :+ y)) a) = ask >>= \c ->
   liftM
   (emptyScope .
    (++)
@@ -89,32 +91,32 @@ figureToTikzPictureWithStyle (Canvas (Translate (x,y)) a) = ask >>= \c ->
   (figureToTikzPictureWithStyle a)
 
 figureToTikzPictureWithStyle (Transform (Rotate r) a) =
-  local (\c -> c { coordinateMatrix = 
-                      coordinateMatrix c ++ 
+  local (\c -> c { coordinateMatrix =
+                      coordinateMatrix c ++
                       pgfLowLevel "rotate" (printNum r)
                  , inverseCoordinateMatrix =
                         pgfLowLevel "rotate" (printNum $ -r) ++
-                        inverseCoordinateMatrix c 
+                        inverseCoordinateMatrix c
                  }) $
   liftM (scope (numArgumentList [("rotate",r,"")]))
   (figureToTikzPictureWithStyle a)
 
-figureToTikzPictureWithStyle (Transform (Scale (x,y)) a) =
-    local (\c -> c { coordinateMatrix = 
-                      coordinateMatrix c ++ 
+figureToTikzPictureWithStyle (Transform (Scale (x :+ y)) a) =
+    local (\c -> c { coordinateMatrix =
+                      coordinateMatrix c ++
                       pgfLowLevel "xscale" (printNum x) ++
                       pgfLowLevel "yscale" (printNum y)
                  , inverseCoordinateMatrix =
                         pgfLowLevel "xscale" (printNum $ 1/x) ++
                         pgfLowLevel "yscale" (printNum $ 1/y) ++
-                        inverseCoordinateMatrix c 
+                        inverseCoordinateMatrix c
                  }) $
   liftM (scope (numArgumentList [("xscale",x,""),("yscale",y,"")]))
   (figureToTikzPictureWithStyle a)
 
-figureToTikzPictureWithStyle (Transform (Translate (x,y)) a) =
-    local (\c -> c { coordinateMatrix = 
-                      coordinateMatrix c ++ 
+figureToTikzPictureWithStyle (Transform (Translate (x :+ y)) a) =
+    local (\c -> c { coordinateMatrix =
+                      coordinateMatrix c ++
                       pgfLowLevel "xshift" (printNum x ++ "cm") ++
                       pgfLowLevel "yshift" (printNum y ++ "cm")
                  , inverseCoordinateMatrix =
@@ -132,16 +134,16 @@ figureToTikzPictureWithStyle (Text a) = return $ "\\path (0,0) node[anchor=south
 
 figureToTikzPictureWithStyle (Path a) = ask >>= \c ->
    let sp = getProperty (styleP c)
-   in figurePath (pathToString a ++ 
+   in figurePath (pathToString a ++
                   (if sp closePath then " -- cycle" else ""))
 
-figureToTikzPictureWithStyle (Circle ctr r) = 
+figureToTikzPictureWithStyle (Circle ctr r) =
   figurePath $ pointToString ctr ++ " circle (" ++ printNum r ++ "cm)"
-     
-figureToTikzPictureWithStyle (Grid v stepx stepy) = 
-  figurePath $ "(0,0) grid[xstep=" 
-  ++ printNum stepx ++ "cm,ystep=" 
-  ++ printNum stepy ++ "]" 
+
+figureToTikzPictureWithStyle (Grid v stepx stepy) =
+  figurePath $ "(0,0) grid[xstep="
+  ++ printNum stepx ++ "cm,ystep="
+  ++ printNum stepy ++ "]"
   ++ pointToString v
 
 -- * Drawing helpers
@@ -159,8 +161,8 @@ lineColorArgs sp fc lc at =
   arrowTipToArg at ++
   if sp clip then ["clip"] else
     if sp fill && sp stroke then ["fill=" ++ fc,"draw=" ++ lc]
-    else if sp fill then ["fill="++fc] else ["draw="++lc]    
-        
+    else if sp fill then ["fill="++fc] else ["draw="++lc]
+
 arrowTipToArg (TipNone,TipNone) = []
 arrowTipToArg (l,r) = [leftTip l ++ "-" ++ rightTip r]
 
@@ -172,12 +174,12 @@ rightTip TipNone = ""
 styleArguments :: StyleProperties -> [String]
 styleArguments s =
   let sp = getProperty s
-  in argumentList 
-     ( extract lineCap (\p -> [("line cap", tikzLineCap p)]) ++ 
+  in argumentList
+     ( extract lineCap (\p -> [("line cap", tikzLineCap p)]) ++
        extract lineJoin (\p -> [("line join", tikzLineJoin p)]) ++
        extract miterLimit (\p -> [("miter limit", printNum p)]) ++
        extract lineWidth (\p -> [("line width", printNum p)]) ++
-       extract dashPhase (\p -> [("dash phase", printNum p)]) 
+       extract dashPhase (\p -> [("dash phase", printNum p)])
      )
      ++ maybe [] (\p ->
           if length p > 0 then
@@ -209,9 +211,9 @@ xcolor name color =
   in texCommand "definecolor"
      [ name
      , "rgb"
-     , printf "%.2f,%.2f,%.2f" 
-       (channelRed rgb) 
-       (channelGreen rgb) 
+     , printf "%.2f,%.2f,%.2f"
+       (channelRed rgb)
+       (channelGreen rgb)
        (channelBlue rgb)]
 
 prependColor name style prop =
@@ -224,31 +226,31 @@ scope args body = environment "scope" args body
 
 node n = texCommand "node" [n]
 
-pathToString ((ArcSegment p sa ea r):segs) = 
-  pointToString p ++ " arc " ++ printf "(%f:%f:%fcm)" sa ea r ++ 
+pathToString ((ArcSegment p sa ea r):segs) =
+  pointToString p ++ " arc " ++ printf "(%f:%f:%fcm)" sa ea r ++
   pathToString segs
 
 pathToString segs = foldr ((++) . segmentToString) "" segs
 
-segmentToString (MoveTo p) = 
+segmentToString (MoveTo p) =
   pointToString p
-segmentToString (LineSegment p) = 
+segmentToString (LineSegment p) =
   " -- " ++ pointToString p
-segmentToString (ArcSegment p sa ea r) = 
+segmentToString (ArcSegment p sa ea r) =
   -- This needs to be fixed, the point is only connected when there is a current point
   " -- " ++ pointToString p ++ " arc " ++ printf "(%f:%f:%fcm)" sa ea r
 segmentToString (CurveSegment p c1 c2) =
-  " .. controls " ++ pointToString c1 ++ "and " 
+  " .. controls " ++ pointToString c1 ++ "and "
   ++ pointToString c2 ++ ".. " ++ pointToString p
 
-pointToString (x,y) = "(" ++ printNum x ++ "," ++ printNum y ++ ") "
+pointToString (x :+ y) = "(" ++ printNum x ++ "," ++ printNum y ++ ") "
 
-canvasTransform argList = 
+canvasTransform argList =
   ["transform canvas=" ++ tikzSubArguments (numArgumentList argList)]
 
 scopePrefix n = replicate n 'T'
 
-pgfLowLevel t p = 
+pgfLowLevel t p =
   texCommand "pgflowlevel" [texCommand' ("pgftransform" ++ t) [p]]
 
 -- * TeX Output
@@ -260,7 +262,7 @@ argumentList =
 
 numArgumentList =
   map (\(l,n,u) -> l ++ "=" ++ printNum n ++ u)
-  
+
 tikzSubArguments :: [String] -> String
 tikzSubArguments [] = ""
 tikzSubArguments args = "{" ++ intercalate "," args ++ "}"

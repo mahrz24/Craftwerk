@@ -9,7 +9,7 @@
 -- support the creation of a simple user interface to control parameters of
 -- the figures that are displayed.
 
-module Graphics.Craftwerk.UI.Gtk 
+module Graphics.Craftwerk.UI.Gtk
        ( runGTVInWindow
        , colorIn
        , figureOut
@@ -31,35 +31,9 @@ import qualified Data.Map as Map
 import Data.IORef
 import Data.Word
 
+import Data.Complex
+
 import Text.Printf
-
-in1 = sliderIIn (0,5) 1
-in2 = sliderIIn (0,5) 1
-
-pinski :: GTV (Colour Double -> Int -> Figure)
-pinski = tv 
-         (oTitle "Sierpinski Triangle" $ 
-          oLambda (iTitle "Color" defaultIn) (oLambda (iTitle "Iterations" in1) (figureOut 2.0 1.0)) ) tpair
-
-tpair col i = colorStyle col $ iterations i $ triangle
-
-colorStyle col = style newStyle { closePath = yes
-                                , fillColor = Just col
-                                , stroke = no
-                                , fill = yes}
-
-triangle = line [(0,0),(0,1),(1,0)]
-
-iterations :: Int -> Figure -> Figure
-iterations 0 f = f
-iterations i f =
-  let nf = iterations (i-1) f
-  in scale (0.5,0.5) $ composition
-     [
-       translate (0,1) $ nf
-     , translate (0,0) $ nf
-     , translate (1,0) $ nf
-     ]
 
 -- Create an interface for GTV
 
@@ -115,13 +89,13 @@ runGTVInWindow name f = do
 
     -- Menu event actions
   onActionActivate exia (widgetDestroy window)
-  
+
   onDestroy window (mainQuit)
-  
+
   widgetShowAll window
   mainGUI
   return ()
-  
+
 uiStd =  "<ui>\
 \           <menubar>\
 \            <menu action=\"FMA\">\
@@ -147,16 +121,16 @@ getBlue (Color r g b) = (fromIntegral b) / (65536)
 convertC c = sRGB (getRed c) (getGreen c) (getBlue c)
 
 colorIn :: (Ord a, Floating a) => (Colour a) -> In (Colour a)
-colorIn a0 = 
+colorIn a0 =
   primMkI $
   do oldRef <- newIORef a0
      w <- colorButtonNewWithColor (Color 0 0 0)
-     let getter = 
+     let getter =
            do c <- colorButtonGetColor w
               return $ convertC c
          install refresh = forget $ afterColorSet w
                                (do c <- colorButtonGetColor w
-                                   changeTo (convertC c) 
+                                   changeTo (convertC c)
                                    return ())
           where
             changeTo new =
@@ -169,39 +143,39 @@ colorIn a0 =
 instance DefaultOut MkI MkO Figure where defaultOut = figureOut 1.0 1.0
 
 figureOut :: Double -> Double -> Out Figure
-figureOut cw ch = 
-  primMkO $ 
-  do 
+figureOut cw ch =
+  primMkO $
+  do
     figureRef <- newIORef blank
     scrwinR <- scrolledWindowNew Nothing Nothing
-   
-   
+
+
     scrolledWindowSetPolicy scrwinR PolicyAutomatic PolicyAutomatic
 
     canvas <- drawingAreaNew
-    
+
     let aspectRatio w = round $ (fromIntegral w) * ch/cw
     let aspectRatio' h = round $ (fromIntegral h) * cw/ch
     widgetSetSizeRequest canvas 400 (aspectRatio 400)
-    
+
     align <- alignmentNew 0.5 0.5 0 0
     containerAdd align canvas
-    
+
     scrolledWindowAddWithViewport scrwinR align
 
     btnbox <- hButtonBoxNew
     zibtn <- buttonNewFromStock stockZoomIn
     containerAdd btnbox zibtn
-    
+
     onClicked zibtn (do
                         (w,h) <- widgetGetSize canvas
                         let nw = 2*w
                         widgetSetSizeRequest canvas nw (aspectRatio nw)
                     )
-    
+
     zobtn <- buttonNewFromStock stockZoomOut
     containerAdd btnbox zobtn
-    
+
     onClicked zobtn (do
                         (w,h) <- widgetGetSize canvas
                         let nw = round $ (fromIntegral w)/2
@@ -223,32 +197,32 @@ figureOut cw ch =
 
     pdfbtn <- buttonNewWithLabel "Export as PDF..."
     containerAdd btnbox pdfbtn
-    
-    onClicked pdfbtn 
+
+    onClicked pdfbtn
       (exportToFile "Export as PDF" (saveFigureAsPDF $ toWidget canvas) figureRef)
 
     tikzbtn <- buttonNewWithLabel "Export as TikZ..."
     containerAdd btnbox tikzbtn
 
-    onClicked tikzbtn 
+    onClicked tikzbtn
       (exportToFile "Export as TikZ" saveFigureAsTikZ figureRef)
 
     vbox <- vBoxNew False 1
     containerSetBorderWidth vbox 5
     boxPackStart vbox btnbox PackNatural 0
     boxPackStart vbox scrwinR PackGrow 5
-         
-    let display figure = 
+
+    let display figure =
           do writeIORef figureRef figure
              widgetQueueDraw canvas
-              
+
     onExpose canvas $ \_ ->
       do figure <- readIORef figureRef
          drawin <- widgetGetDrawWindow canvas
-         (w,h) <- widgetGetSize canvas 
+         (w,h) <- widgetGetSize canvas
          renderWithDrawable drawin (renderFig figure w h)
          return True
-          
+
     return (toWidget vbox, display, return ())
   where renderFig fig w h =
           do Cairo.setSourceRGB 1.0 1.0 1.0
@@ -260,8 +234,8 @@ figureOut cw ch =
              Cairo.lineTo dw 0
              Cairo.closePath
              Cairo.fill
-             figureToRenderContext . scale (dw/cw, -dh/ch) . translate (0,-ch) $ fig 
-        exportToFile prompt exporter figureRef = 
+             figureToRenderContext . scale ((dw/cw) :+ (-dh/ch)) . translate  (0 :+ (-ch)) $ fig
+        exportToFile prompt exporter figureRef =
           do fchdal <- fileChooserDialogNew (Just prompt) Nothing
                        FileChooserActionSave
                        [("Cancel", ResponseCancel),
@@ -270,9 +244,9 @@ figureOut cw ch =
              widgetShow fchdal
              response <- dialogRun fchdal
              case response of
-               ResponseCancel -> 
+               ResponseCancel ->
                  return ()
-               ResponseAccept -> 
+               ResponseAccept ->
                  do nwf <- fileChooserGetFilename fchdal
                     case nwf of
                       Nothing -> return ()
@@ -290,11 +264,11 @@ saveFigureAsPDF c cw ch f filename =
      (Cairo.withPDFSurface filename
       (realToFrac dw)
       (realToFrac dh)
-      (`Cairo.renderWith` 
-       (figureToRenderContext . scale (dw/cw, -dh/ch) . translate (0,-ch) $ f)))
+      (`Cairo.renderWith`
+       (figureToRenderContext . scale ((dw/cw) :+ (-dh/ch)) . translate (0 :+ (-ch))  $ f)))
 
 saveFigureAsTikZ :: Double -> Double -> Figure -> String -> IO ()
-saveFigureAsTikZ w h f filename = 
+saveFigureAsTikZ w h f filename =
   writeFile filename (figureToTikzPicture f)
 
 

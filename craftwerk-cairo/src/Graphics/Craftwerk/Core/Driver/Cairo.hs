@@ -24,6 +24,8 @@ import qualified Graphics.Rendering.Cairo.Matrix as Matrix
 import Control.Monad
 import Control.Monad.Reader
 
+import Data.Complex
+
 data Context = Context { styleP :: StyleProperties
                        , initialMatrix :: Matrix
                        , strokeMatrix :: Matrix
@@ -85,10 +87,10 @@ figureToRenderContextWithStyle (Decoration p a) =
                curm <- (Cairo.getMatrix)
                let dec = (decorationsRotation c)
                    ini = (initialMatrix c)
-                   dorigin = Matrix.transformPoint
+                   (ox,oy) = Matrix.transformPoint
                              ((Matrix.invert ini)*(curm)) (0,0)
                Cairo.setMatrix (ini)
-               fnC Cairo.translate dorigin
+               Cairo.translate ox oy
                Cairo.rotate (radians $ -dec)
      figureToRenderContextWithStyle a
      lift Cairo.restore
@@ -151,8 +153,8 @@ figureToRenderContextWithStyle other =
 
 -- Helper functions
 
-fnC :: (Double -> Double -> c) -> (Double, Double) -> c
-fnC = uncurry
+fnC :: (Double -> Double -> c) -> (Complex Double) -> c
+fnC f (x :+ y) = f x y
 
 cairoSetColor color =
   let rgb = toSRGB color
@@ -179,14 +181,14 @@ cairoPath a sp = do mapM_ cairoSegment a
 
 cairoSegment (MoveTo p) = fnC Cairo.moveTo p
 cairoSegment (LineSegment p) = fnC Cairo.lineTo p
-cairoSegment (ArcSegment (x,y) sa ea r) =
+cairoSegment (ArcSegment (x :+ y) sa ea r) =
   if sa > ea then
     Cairo.arcNegative (x-r*cos(radians sa)) (y-r*sin(radians sa))
      r (radians sa) (radians ea)
   else
     Cairo.arc (x-r*cos(radians sa)) (y-r*sin(radians sa))
      r (radians sa) (radians ea)
-cairoSegment (CurveSegment (px,py) (c1x,c1y) (c2x,c2y)) =
+cairoSegment (CurveSegment (px :+ py) (c1x :+ c1y) (c2x :+ c2y)) =
   Cairo.curveTo
   c1x
   c1y

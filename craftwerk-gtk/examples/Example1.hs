@@ -10,16 +10,16 @@ import Control.Monad.Trans
 import Control.Monad.Writer
 import Data.IORef
 
-main = 
+main =
   do c1 <- choice "Color" ["red","green","blue"]
-     c2 <- choice "Color" ["red","green","blue"]     
+     c2 <- choice "Color" ["red","green","blue"]
      let (f,ui) = runWriter (do col1 <- c1
                                 col2 <- c2
                                 return (do col <- readIORef col1
                                            return $ colorStyle col $ iterations 4 $ triangle))
 
      displayRender ui $ renderFigure 1 1 f
-                        
+
 
 
 -- displayRender
@@ -33,8 +33,8 @@ main =
 --                                             (round $ value (opt Map.! "Iteration"))
 --                                             triangle
 --                         )
-       
-       
+
+
 triangle = line [(0,0),(0,1),(1,0)]
 
 colorStyle col = style newStyle { closePath = yes
@@ -57,3 +57,32 @@ iterations i f =
      , translate (1,0) $ nf
      ]
 
+in1 = sliderIIn (0,10) 1
+in2 = sliderIIn (0,10) 1
+
+main = runGTVInWindow "Test" pinski
+
+pinski :: GTV (Colour Double -> Int -> Figure)
+pinski = tv
+         (oTitle "Sierpinski Triangle" $
+          oLambda (iTitle "Color" defaultIn) (oLambda (iTitle "Iterations" in1) (figureOut 2.0 1.0)) ) tpair
+
+tpair col i = colorStyle col $ iterations i $ triangle
+
+colorStyle col = style newStyle { closePath = yes
+                                , fillColor = Just col
+                                , stroke = no
+                                , fill = yes}
+
+triangle = line [(0 :+ 0),(0 :+ 1),(1 :+ 0)]
+
+iterations :: Int -> Figure -> Figure
+iterations 0 f = f
+iterations i f =
+  let nf = iterations (i-1) f
+  in scale (0.5 :+ 0.5) $ composition
+     [
+       translate (0 :+ 1) $ nf
+     , translate (0 :+ 0) $ nf
+     , translate (1 :+ 0) $ nf
+     ]
