@@ -1,0 +1,49 @@
+Name:                craftwerk-graphviz
+Version:             0.1
+License:	     MIT
+License-file:	     LICENSE
+Author:              Malte Harder <malte.harder@gmail.com>
+Maintainer:          Malte Harder <malte.harder@gmail.com>
+Category:	     Graphics
+Homepage:            http://mahrz.github.com/craftwerk.html
+Synopsis:            Graphviz for Craftwerk.
+Description:	
+
+Stability:	     unstable
+Build-Type:          Simple
+Cabal-Version:       >=1.8
+
+Extra-Source-Files:  LICENSE,
+		     examples/Example1.hs
+
+Flag examples
+  Description:       Build the examples
+  Default:           False
+
+Library
+  Hs-Source-Dirs:    src
+  Build-Depends:     base >= 3 && < 5,
+                     craftwerk >= 0.1 && < 0.2,
+                     fgl >= 5.4 && < 5.5,
+                     graphviz >= 2999.11.0 && < 2999.12,
+                     parsec,
+                     craftwerk-gtk
+  Exposed-Modules:   Graphics.Craftwerk.GraphViz
+
+Executable example1
+  Hs-Source-Dirs:    examples
+  if flag(examples)
+    Build-Depends:   base >= 3 && < 5,
+                     craftwerk,
+                     craftwerk-cairo,
+                     craftwerk-gtk,
+                     containers,
+                     mtl
+  Main-Is:           Example1.hs
+  if !flag(examples)
+    Buildable:       False
+
+source-repository head
+  type:     git
+  location: git://github.com/mahrz/Craftwerk.git
+
